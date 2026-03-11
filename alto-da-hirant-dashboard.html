@@ -1,0 +1,833 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Alto da Hirant · Dashboard IA</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html[data-theme="dark"] {
+      --bg0: #0A0700; --bg1: #130E00;
+      --card: #1A1100; --border: #3D2800;
+      --t1: #F5ECD7; --t2: #6B4A1A; --t3: #4A3010;
+      --grid: rgba(61,40,0,0.5);
+      --hover: rgba(232,93,4,0.06);
+      --tip: #221700; --tab: #130E00;
+      --hdr: rgba(10,7,0,0.88);
+      --tog: #3D2800; --sh: rgba(232,93,4,0.22);
+      --sb: #3D2800;
+    }
+    html[data-theme="light"] {
+      --bg0: #FFF8F0; --bg1: #FFF1E0;
+      --card: #FFFFFF; --border: #F0D4B0;
+      --t1: #1A0F00; --t2: #8A5A1A; --t3: #C4956A;
+      --grid: rgba(200,160,100,0.3);
+      --hover: rgba(232,93,4,0.04);
+      --tip: #FFFFFF; --tab: #FFF1E0;
+      --hdr: rgba(255,248,240,0.92);
+      --tog: #E85D04; --sh: rgba(232,93,4,0.18);
+      --sb: #F0D4B0;
+    }
+
+    body { font-family:'DM Sans',sans-serif; min-height:100vh; color:var(--t1); transition:color .35s; }
+    html[data-theme="dark"]  body { background:linear-gradient(155deg,#0A0700,#130E00); }
+    html[data-theme="light"] body { background:linear-gradient(155deg,#FFF8F0,#FFF1E0); }
+
+    ::-webkit-scrollbar{width:5px;height:5px}
+    ::-webkit-scrollbar-track{background:transparent}
+    ::-webkit-scrollbar-thumb{background:var(--sb);border-radius:3px}
+
+    @keyframes fadeSlide { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+    .fi { animation:fadeSlide .32s ease forwards }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.5} }
+
+    /* ── Header ── */
+    .hdr {
+      position:sticky;top:0;z-index:100;
+      backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);
+      border-bottom:1px solid var(--border);background:var(--hdr);
+      transition:border-color .35s,background .35s;
+    }
+    .hdr-i {
+      max-width:1280px;margin:0 auto;padding:14px 24px;
+      display:flex;align-items:center;justify-content:space-between;
+    }
+    .brand{display:flex;align-items:center;gap:13px}
+    .b-name{
+      font-family:'Playfair Display',serif;font-weight:900;font-size:19px;
+      letter-spacing:.12em;text-transform:uppercase;color:var(--t1);transition:color .35s;line-height:1.1;
+    }
+    .b-tag{font-size:10px;font-weight:500;letter-spacing:.22em;text-transform:uppercase;color:#E85D04;margin-top:3px}
+    .hdr-r{display:flex;align-items:center;gap:18px}
+    .agt{display:flex;align-items:center;gap:6px;font-size:11px;font-weight:600;letter-spacing:.07em;color:var(--t2);transition:color .35s}
+    .dot{width:7px;height:7px;border-radius:50%;background:#22C55E;box-shadow:0 0 7px rgba(34,197,94,.55);animation:pulse 2.2s infinite}
+    .date{font-size:11px;font-weight:500;letter-spacing:.05em;color:var(--t2);transition:color .35s;text-transform:capitalize}
+    .clk{font-family:'Playfair Display',serif;font-size:13px;font-weight:700;color:#E85D04;letter-spacing:.04em}
+    .tog-btn{width:50px;height:28px;border-radius:14px;border:none;cursor:pointer;background:var(--tog);transition:background .35s;position:relative}
+    .tog-th{
+      position:absolute;top:4px;width:20px;height:20px;border-radius:50%;
+      background:white;display:flex;align-items:center;justify-content:center;
+      font-size:10px;box-shadow:0 2px 6px rgba(0,0,0,.3);
+      transition:transform cubic-bezier(.4,0,.2,1) .35s;
+    }
+    html[data-theme="dark"]  .tog-th{transform:translateX(4px)}
+    html[data-theme="light"] .tog-th{transform:translateX(26px)}
+
+    /* ── Layout ── */
+    .dash{max-width:1280px;margin:0 auto;padding:0 24px 56px}
+    .tabs-w{padding:22px 0 0}
+    .tabs{display:flex;gap:3px;padding:4px;background:var(--tab);border:1px solid var(--border);border-radius:11px;width:fit-content;transition:background .35s,border-color .35s}
+    .tab{padding:8px 22px;border-radius:8px;border:none;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:11px;font-weight:600;letter-spacing:.09em;text-transform:uppercase;transition:all .25s}
+    .tab.act{background:#E85D04;color:#fff}
+    .tab:not(.act){background:transparent;color:var(--t2)}
+    .tab:not(.act):hover{color:var(--t1)}
+
+    .g4{display:grid;grid-template-columns:repeat(4,1fr);gap:15px;margin-top:22px}
+    .g21{display:grid;grid-template-columns:2fr 1fr;gap:15px;margin-top:15px}
+    .g11{display:grid;grid-template-columns:1fr 1fr;gap:15px;margin-top:15px}
+
+    /* ── Card ── */
+    .card{
+      background:var(--card);border:1px solid var(--border);
+      border-radius:16px;overflow:hidden;position:relative;
+      transition:background .35s,border-color .35s,transform .2s,box-shadow .2s,outline .2s;
+    }
+    .card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,#DC2626,#E85D04,#F97316)}
+    .cb{padding:20px}
+    .kc{cursor:default}
+    .kc:hover{transform:translateY(-3px);box-shadow:0 14px 36px var(--sh)}
+    .kc.clickable{cursor:pointer}
+    .kc.active-card{outline:2px solid #E85D04;outline-offset:-2px}
+
+    .klbl{display:flex;align-items:center;gap:6px;font-size:10px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--t2);transition:color .35s}
+    .kico{font-size:13px}
+    .kval{font-family:'Playfair Display',serif;font-weight:900;font-size:44px;letter-spacing:-.02em;line-height:1.05;color:var(--t1);transition:color .35s;margin-top:10px}
+    .kval.sm{font-size:34px}
+    .kft{display:flex;align-items:center;justify-content:space-between;margin-top:10px}
+    .ksub{font-size:11px;font-weight:500;color:var(--t2);transition:color .35s}
+
+    /* ── Badges ── */
+    .b{font-size:10px;font-weight:700;letter-spacing:.06em;padding:3px 9px;border-radius:20px;white-space:nowrap}
+    .bp{background:rgba(34,197,94,.13);color:#22C55E}
+    .bn{background:rgba(245,158,11,.13);color:#F59E0B}
+    .be{background:rgba(239,68,68,.13);color:#EF4444}
+    .ba{background:rgba(232,93,4,.14);color:#E85D04}
+    .br{background:rgba(232,93,4,.14);color:#E85D04}
+    .bc{background:rgba(249,115,22,.14);color:#F97316}
+    .bl{background:rgba(220,38,38,.14);color:#DC2626}
+    .bo{background:rgba(107,74,26,.18);color:var(--t2)}
+
+    /* ── Chart head ── */
+    .ch{display:flex;align-items:flex-start;justify-content:space-between;padding:20px 20px 0}
+    .ct{font-family:'Playfair Display',serif;font-weight:700;font-size:15px;color:var(--t1);transition:color .35s}
+    .cs{font-size:10px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--t2);transition:color .35s;margin-top:3px}
+    .cbdy{padding:14px 20px 20px}
+
+    /* ── Donut legend ── */
+    .ll{display:flex;flex-direction:column;gap:6px;margin-top:12px}
+    .lr{
+      display:flex;align-items:center;justify-content:space-between;
+      cursor:pointer;border-radius:8px;padding:4px 7px;margin:0 -7px;
+      transition:background .18s;
+    }
+    .lr:hover{background:rgba(232,93,4,0.07)}
+    .lr.lr-act{background:rgba(232,93,4,0.12)}
+    .ll{display:flex;flex-direction:column;gap:2px;margin-top:12px}
+    .ld{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+    .ll2{font-size:11px;font-weight:500;color:var(--t2);transition:color .35s}
+    .lp{font-size:10px;color:var(--t3);margin-right:8px;transition:color .35s}
+    .lv{font-family:'Playfair Display',serif;font-weight:700;font-size:14px;color:var(--t1);transition:color .35s}
+    .lft{display:flex;align-items:center;gap:8px}
+
+    /* ── Bar legend ── */
+    .bleg{display:flex;gap:14px}
+    .bli{display:flex;align-items:center;gap:5px;font-size:10px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--t2);transition:color .35s}
+    .bls{width:10px;height:10px;border-radius:3px}
+
+    /* ── Table ── */
+    .tscr{overflow-x:auto;overflow-y:auto;max-height:300px}
+    table{width:100%;border-collapse:collapse}
+    thead th{font-size:10px;font-weight:600;letter-spacing:.13em;text-transform:uppercase;color:var(--t2);padding:10px 14px;text-align:left;border-bottom:1px solid var(--border);background:var(--card);position:sticky;top:0;transition:color .35s,background .35s,border-color .35s}
+    tbody tr{border-bottom:1px solid var(--border);transition:background .2s,border-color .35s,opacity .2s}
+    tbody tr:hover{background:var(--hover)}
+    tbody tr:last-child{border-bottom:none}
+    tbody td{font-size:12px;font-weight:500;color:var(--t1);padding:9px 14px;transition:color .35s}
+
+    /* ── Filter chips ── */
+    .fchips{display:flex;align-items:center;gap:8px;margin-top:12px;flex-wrap:wrap}
+    .fchip-lbl{font-size:10px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--t2)}
+    .fclear{background:none;border:1px solid var(--border);cursor:pointer;font-size:9px;color:var(--t2);font-weight:700;letter-spacing:.1em;text-transform:uppercase;padding:3px 9px;border-radius:20px;transition:all .2s;font-family:'DM Sans',sans-serif}
+    .fclear:hover{border-color:#E85D04;color:#E85D04}
+
+    /* ── Footer ── */
+    .ftr{margin-top:42px;padding:20px 0;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;transition:border-color .35s}
+    .fb{font-family:'Playfair Display',serif;font-weight:700;font-size:14px;letter-spacing:.07em;color:var(--t1);transition:color .35s}
+    .fm{font-size:10px;font-weight:500;letter-spacing:.06em;color:var(--t2);margin-top:4px;transition:color .35s}
+    .fr{font-size:10px;font-weight:500;letter-spacing:.06em;color:var(--t2);text-align:right;transition:color .35s}
+
+    /* ── Responsive ── */
+    @media(max-width:1000px){.g4{grid-template-columns:repeat(2,1fr)}.g21,.g11{grid-template-columns:1fr}}
+    @media(max-width:600px){.g4{grid-template-columns:1fr 1fr}.hdr-i{flex-wrap:wrap;gap:10px}.kval{font-size:34px}.b-name{font-size:16px}}
+
+    /* ── Logo upload ── */
+    .logo-wrap { position:relative; cursor:pointer; width:46px; height:46px; flex-shrink:0; }
+    .logo-wrap .logo-ov {
+      position:absolute; top:0; left:0; width:46px; height:46px;
+      border-radius:50%; background:rgba(0,0,0,0.52);
+      display:flex; flex-direction:column; align-items:center; justify-content:center;
+      gap:1px; opacity:0; transition:opacity 0.22s; pointer-events:none;
+    }
+    .logo-wrap:hover .logo-ov { opacity:1; }
+    .logo-ov-icon { font-size:15px; line-height:1; }
+    .logo-ov-txt { font-size:7px; font-weight:700; letter-spacing:.06em; color:#fff; text-transform:uppercase; }
+    .logo-img { width:46px; height:46px; border-radius:50%; object-fit:cover; border:2px solid var(--border); transition:border-color .35s; display:block; }
+    .logo-reset { position:absolute; top:-5px; right:-5px; width:16px; height:16px; border-radius:50%; background:#EF4444; border:none; cursor:pointer; font-size:9px; color:#fff; display:flex; align-items:center; justify-content:center; line-height:1; padding:0; opacity:0; transition:opacity .2s; }
+    .logo-wrap:hover .logo-reset { opacity:1; }
+  </style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+  var useState  = React.useState;
+  var useEffect = React.useEffect;
+  var useRef    = React.useRef;
+
+  /* ══ DATA ══════════════════════════════════════════════════════════════════ */
+  var TABS = {
+    hoje: {
+      kpis:{
+        total:   {value:'74',  sub:'vs. ontem',        delta:'+8%',   dt:'bp'},
+        reservas:{value:'31',  sub:'vs. ontem',        delta:'+12%',  dt:'bp'},
+        satisf:  {value:'96%', sub:'feedbacks de hoje',delta:'+2%',   dt:'bp',sm:true},
+        pico:    {value:'19h', sub:'Turno: Jantar',    delta:'Jantar',dt:'bn',sm:true},
+      },
+      linhaLabel:'Hoje - Volume por hora',
+      linha:[
+        {dia:'10h',total:3},{dia:'11h',total:6},{dia:'12h',total:14},{dia:'13h',total:19},
+        {dia:'14h',total:11},{dia:'15h',total:7},{dia:'16h',total:5},{dia:'17h',total:4},
+        {dia:'18h',total:8},{dia:'19h',total:12},{dia:'20h',total:9},{dia:'21h',total:6},{dia:'22h',total:3},
+      ],
+      donut:[
+        {name:'Reservas',   value:31, color:'#E85D04',pct:'42%'},
+        {name:'Cardapio',   value:23, color:'#F97316',pct:'31%'},
+        {name:'Localizacao',value:14, color:'#DC2626',pct:'19%'},
+        {name:'Outros',     value:6,  color:'#6B4A1A',pct:'8%'},
+      ],
+      barLabel:'Distribuicao por turno',
+      barras:[
+        {d:'Manha',a:9,j:0},{d:'Almoco',a:28,j:3},{d:'Tarde',a:7,j:8},
+        {d:'Jantar',a:0,j:24},{d:'Noite',a:0,j:6},
+      ],
+    },
+    semana:{
+      kpis:{
+        total:   {value:'406', sub:'vs. semana anterior',delta:'+18%',  dt:'bp'},
+        reservas:{value:'182', sub:'vs. semana anterior',delta:'+24%',  dt:'bp'},
+        satisf:  {value:'94%', sub:'feedbacks positivos',delta:'+3%',   dt:'bp',sm:true},
+        pico:    {value:'13h', sub:'Turno: Almoco',      delta:'Almoco',dt:'bn',sm:true},
+      },
+      linhaLabel:'Semana atual - Volume diario',
+      linha:[
+        {dia:'Seg',total:42},{dia:'Ter',total:38},{dia:'Qua',total:51},
+        {dia:'Qui',total:45},{dia:'Sex',total:67},{dia:'Sab',total:89},{dia:'Dom',total:74},
+      ],
+      donut:[
+        {name:'Reservas',   value:182,color:'#E85D04',pct:'42%'},
+        {name:'Cardapio',   value:133,color:'#F97316',pct:'31%'},
+        {name:'Localizacao',value:91, color:'#DC2626',pct:'21%'},
+        {name:'Outros',     value:34, color:'#6B4A1A',pct:'8%'},
+      ],
+      barLabel:'Atendimentos por turno',
+      barras:[
+        {d:'Seg',a:22,j:20},{d:'Ter',a:18,j:20},{d:'Qua',a:25,j:26},
+        {d:'Qui',a:21,j:24},{d:'Sex',a:30,j:37},{d:'Sab',a:38,j:51},{d:'Dom',a:32,j:42},
+      ],
+    },
+    mes:{
+      kpis:{
+        total:   {value:'1840',sub:'vs. mes anterior',  delta:'+22%',  dt:'bp'},
+        reservas:{value:'780', sub:'vs. mes anterior',  delta:'+31%',  dt:'bp'},
+        satisf:  {value:'93%', sub:'feedbacks positivos',delta:'-1%',  dt:'be',sm:true},
+        pico:    {value:'20h', sub:'Turno: Jantar',     delta:'Jantar',dt:'bn',sm:true},
+      },
+      linhaLabel:'Este mes - Volume semanal',
+      linha:[
+        {dia:'Sem 1',total:380},{dia:'Sem 2',total:420},
+        {dia:'Sem 3',total:452},{dia:'Sem 4',total:588},
+      ],
+      donut:[
+        {name:'Reservas',   value:780,color:'#E85D04',pct:'42%'},
+        {name:'Cardapio',   value:571,color:'#F97316',pct:'31%'},
+        {name:'Localizacao',value:386,color:'#DC2626',pct:'21%'},
+        {name:'Outros',     value:147,color:'#6B4A1A',pct:'8%'},
+      ],
+      barLabel:'Atendimentos por turno',
+      barras:[
+        {d:'Sem 1',a:165,j:215},{d:'Sem 2',a:180,j:240},
+        {d:'Sem 3',a:198,j:254},{d:'Sem 4',a:257,j:331},
+      ],
+    },
+  };
+
+  var ALL_ROWS = [
+    {id:'#001',h:'12:43',cli:'Joao Silva',    tipo:'Reservas',   st:'Positivo',det:'Mesa p/ 6 pessoas'},
+    {id:'#002',h:'12:51',cli:'Maria Santos',  tipo:'Cardapio',   st:'Positivo',det:'Opcoes vegetarianas'},
+    {id:'#003',h:'13:02',cli:'Pedro Costa',   tipo:'Localizacao',st:'Neutro',  det:'Rota via Google Maps'},
+    {id:'#004',h:'13:18',cli:'Ana Lima',       tipo:'Reservas',   st:'Positivo',det:'Reserva aniversario'},
+    {id:'#005',h:'13:31',cli:'Carlos Mendes', tipo:'Cardapio',   st:'Negativo',det:'Duvida sobre alergenos'},
+    {id:'#006',h:'13:45',cli:'Lucia Ferreira',tipo:'Reservas',   st:'Positivo',det:'Confirmacao de reserva'},
+    {id:'#007',h:'14:02',cli:'Roberto Alves', tipo:'Localizacao',st:'Positivo',det:'Estacionamento local'},
+    {id:'#008',h:'14:19',cli:'Fernanda Rocha',tipo:'Cardapio',   st:'Neutro',  det:'Precos do menu'},
+  ];
+
+  /* ══ CLOCK ══════════════════════════════════════════════════════════════════ */
+  function useClock() {
+    var s = useState(''); var time = s[0]; var setTime = s[1];
+    useEffect(function() {
+      function fmt() { return new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}); }
+      setTime(fmt());
+      var id = setInterval(function(){setTime(fmt());},30000);
+      return function(){clearInterval(id);};
+    },[]);
+    return time;
+  }
+
+  /* ══ FLAME LOGO ═════════════════════════════════════════════════════════════ */
+  function FlameLogo(props) {
+    var sz = props.size||46;
+    return (
+      <svg width={sz} height={sz} viewBox="0 0 48 48" fill="none">
+        <defs>
+          <linearGradient id="fg" x1="24" y1="40" x2="24" y2="8" gradientUnits="userSpaceOnUse">
+            <stop offset="0%" stopColor="#DC2626"/>
+            <stop offset="48%" stopColor="#E85D04"/>
+            <stop offset="100%" stopColor="#F97316"/>
+          </linearGradient>
+        </defs>
+        <circle cx="24" cy="24" r="22.5" stroke="var(--t1)" strokeWidth="1.5" fill="none"/>
+        <path d="M24 39 C17 35 13 28 15.5 21 C17 16 20 12.5 24 10 C24 10 21.5 17 25 20.5 C26.2 18.2 27.5 15.5 28.5 13.5 C31 18 32 23.5 29.5 28 C33 24.5 33 20 31.5 17 C35 21.5 36 28 32.5 32 C30 36 27 39 24 39Z" fill="url(#fg)"/>
+        <path d="M24 35 C21 32 20 28 22 23.5 C23.2 26.5 25 28 25 31 C27 28.5 27 25.5 26 23 C28 25.5 29 29 27 32.5 C26 34.5 25 35.5 24 35Z" fill="rgba(255,255,255,0.28)"/>
+      </svg>
+    );
+  }
+
+  /* ══ SVG LINE CHART ══════════════════════════════════════════════════════════ */
+  function SvgLine(props) {
+    var data = props.data;
+    var activeDay = props.activeDay;
+    var setActiveDay = props.setActiveDay;
+    var tt = useState(null); var tip = tt[0]; var setTip = tt[1];
+
+    var W=560, H=195, PL=36, PT=14, PB=26, IW=W-PL, IH=H-PT-PB;
+    var n=data.length;
+    var maxV=Math.max.apply(null,data.map(function(d){return d.total;}))||1;
+    function gx(i){return n<2?PL+IW/2:PL+(i/(n-1))*IW;}
+    function gy(v){return PT+(1-v/maxV)*IH;}
+
+    var pts=data.map(function(d,i){return gx(i)+','+gy(d.total);}).join(' ');
+    var step=Math.ceil(n/7);
+    var hasFilt=!!activeDay;
+
+    return (
+      <svg width="100%" viewBox={'0 0 '+W+' '+(H+PB)} style={{display:'block',overflow:'visible'}}>
+        <defs>
+          <linearGradient id="lg" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0%" stopColor="#DC2626"/>
+            <stop offset="50%" stopColor="#E85D04"/>
+            <stop offset="100%" stopColor="#F97316"/>
+          </linearGradient>
+        </defs>
+        {[0.25,0.5,0.75,1].map(function(pct){
+          var y=PT+(1-pct)*IH;
+          return (
+            <g key={pct}>
+              <line x1={PL} y1={y} x2={W} y2={y} stroke="var(--grid)" strokeDasharray="4 3" strokeWidth="1"/>
+              <text x={PL-5} y={y+4} textAnchor="end" fontSize="9" style={{fill:'var(--t2)'}}>{Math.round(pct*maxV)}</text>
+            </g>
+          );
+        })}
+        <polyline points={pts} fill="none" stroke="url(#lg)" strokeWidth="2.5" strokeLinejoin="round" strokeLinecap="round"/>
+        {data.map(function(d,i){
+          var x=gx(i); var y=gy(d.total);
+          var isAct=activeDay===d.dia;
+          var isDim=hasFilt&&!isAct;
+          var showLbl=n<=7||i%step===0||i===n-1||isAct;
+          return (
+            <g key={i} style={{cursor:'pointer'}}
+              onClick={function(){setActiveDay(isAct?null:d.dia);}}
+              onMouseEnter={function(){setTip({x:x,y:y,lbl:d.dia,val:d.total});}}
+              onMouseLeave={function(){setTip(null);}}>
+              <circle cx={x} cy={y} r={isAct?8:isDim?3:5}
+                style={{
+                  fill:isAct?'#E85D04':'var(--card)',
+                  stroke:'#E85D04',strokeWidth:isAct?0:2,
+                  opacity:isDim?0.25:1,
+                  transition:'all 0.22s',
+                  filter:isAct?'drop-shadow(0 0 6px rgba(232,93,4,0.7))':'none',
+                }}/>
+              {showLbl&&(
+                <text x={x} y={H+PB-4} textAnchor="middle"
+                  fontSize={isAct?10:9} fontWeight={isAct?700:400}
+                  style={{fill:isAct?'#E85D04':'var(--t2)',transition:'fill 0.2s'}}>
+                  {d.dia}
+                </text>
+              )}
+            </g>
+          );
+        })}
+        {tip&&(
+          <g style={{pointerEvents:'none'}}>
+            <rect x={Math.min(tip.x-30,W-62)} y={Math.max(tip.y-58,2)} width={62} height={50}
+              rx={7} style={{fill:'var(--tip)',stroke:'var(--border)'}} strokeWidth={1}/>
+            <text x={Math.min(tip.x,W-31)} y={Math.max(tip.y-42,18)} textAnchor="middle"
+              fontSize={8} style={{fill:'var(--t2)'}}>{tip.lbl}</text>
+            <text x={Math.min(tip.x,W-31)} y={Math.max(tip.y-23,36)} textAnchor="middle"
+              fontSize={19} fontFamily="Playfair Display,serif" fontWeight={900} fill="#E85D04">
+              {tip.val}
+            </text>
+            <text x={Math.min(tip.x,W-31)} y={Math.max(tip.y-10,49)} textAnchor="middle"
+              fontSize={7} style={{fill:'var(--t2)'}}>atend.</text>
+          </g>
+        )}
+      </svg>
+    );
+  }
+
+  /* ══ SVG DONUT ═══════════════════════════════════════════════════════════════ */
+  function SvgDonut(props) {
+    var data=props.data;
+    var filterType=props.filterType;
+    var setFilterType=props.setFilterType;
+    var total=data.reduce(function(s,d){return s+d.value;},0);
+    var cx=100,cy=82,OUTER=68,INNER=55,GAP=(3*Math.PI)/180;
+    var angle=-Math.PI/2;
+    var segs=data.map(function(d){
+      var pct=d.value/total;
+      var arc=pct*2*Math.PI-GAP;
+      if(arc<0.01)arc=0.01;
+      var sa=angle+GAP/2, ea=sa+arc;
+      var large=arc>Math.PI?1:0;
+      function px(a,r){return cx+r*Math.cos(a);}
+      function py(a,r){return cy+r*Math.sin(a);}
+      var path=['M',px(sa,OUTER),py(sa,OUTER),'A',OUTER,OUTER,0,large,1,px(ea,OUTER),py(ea,OUTER),'L',px(ea,INNER),py(ea,INNER),'A',INNER,INNER,0,large,0,px(sa,INNER),py(sa,INNER),'Z'].join(' ');
+      angle+=pct*2*Math.PI;
+      return {path:path,color:d.color,name:d.name};
+    });
+    var hasFilt=!!filterType;
+    return (
+      <svg width="100%" height="160" viewBox="0 0 200 160" style={{display:'block'}}>
+        {segs.map(function(s,i){
+          var isAct=filterType===s.name;
+          var isDim=hasFilt&&!isAct;
+          return (
+            <path key={i} d={s.path} fill={s.color}
+              stroke={isAct?'white':'none'} strokeWidth={isAct?2.5:0}
+              style={{
+                opacity:isDim?0.25:1,
+                cursor:'pointer',
+                transition:'opacity 0.22s',
+                filter:isAct?'drop-shadow(0 0 5px rgba(0,0,0,0.4))':'none',
+              }}
+              onClick={function(){setFilterType(isAct?null:s.name);}}
+            />
+          );
+        })}
+        <text x={cx} y={cy-8} textAnchor="middle" fontSize="20"
+          fontFamily="Playfair Display,serif" fontWeight="900" style={{fill:'var(--t1)',pointerEvents:'none'}}>
+          {filterType ? (data.find(function(d){return d.name===filterType;})||{value:0}).value : total}
+        </text>
+        <text x={cx} y={cy+9} textAnchor="middle" fontSize="8"
+          fontWeight="600" letterSpacing="2" style={{fill:'var(--t2)',pointerEvents:'none',textTransform:'uppercase'}}>
+          {filterType ? filterType : 'TOTAL'}
+        </text>
+      </svg>
+    );
+  }
+
+  /* ══ CSS BAR CHART ═══════════════════════════════════════════════════════════ */
+  function CssBar(props) {
+    var data=props.data,barAlt=props.barAlt||'#8A6A3A';
+    var activeDay=props.activeDay,setActiveDay=props.setActiveDay;
+    var hv=useState(null);var hov=hv[0];var setHov=hv[1];
+    var maxV=Math.max.apply(null,data.map(function(d){return Math.max(d.a,d.j,1);}));
+    var BAR_H=172;
+    var hasFilt=!!activeDay;
+
+    return (
+      <div style={{display:'flex',alignItems:'flex-end',height:BAR_H+52,width:'100%'}}>
+        {data.map(function(d,i){
+          var aH=Math.round((d.a/maxV)*BAR_H);
+          var jH=Math.round((d.j/maxV)*BAR_H);
+          var isAct=activeDay===d.d;
+          var isDim=hasFilt&&!isAct;
+          var isHov=hov===i;
+          return (
+            <div key={i} style={{flex:1,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'flex-end',cursor:'pointer',opacity:isDim?0.25:1,transition:'opacity 0.22s'}}
+              onClick={function(){setActiveDay(isAct?null:d.d);}}
+              onMouseEnter={function(){setHov(i);}}
+              onMouseLeave={function(){setHov(null);}}>
+              <div style={{height:36,display:'flex',alignItems:'flex-end',justifyContent:'center',flexDirection:'column',gap:1,marginBottom:4,opacity:(isHov||isAct)?1:0,transition:'opacity 0.15s'}}>
+                {d.a>0&&<div style={{fontSize:9,fontWeight:700,color:barAlt,textAlign:'center'}}>{d.a}</div>}
+                {d.j>0&&<div style={{fontSize:9,fontWeight:700,color:'#E85D04',textAlign:'center'}}>{d.j}</div>}
+              </div>
+              <div style={{display:'flex',alignItems:'flex-end',gap:3,height:BAR_H}}>
+                <div style={{width:10,height:Math.max(aH,2),background:barAlt,borderRadius:'4px 4px 0 0',transition:'height .4s ease',boxShadow:isAct?'0 0 10px '+barAlt:'none'}}/>
+                <div style={{width:10,height:Math.max(jH,2),background:'#E85D04',borderRadius:'4px 4px 0 0',transition:'height .4s ease',boxShadow:isAct?'0 0 10px rgba(232,93,4,0.6)':'none'}}/>
+              </div>
+              <div style={{fontSize:9,fontWeight:isAct?700:600,color:isAct?'#E85D04':'var(--t2)',marginTop:6,letterSpacing:'0.06em',textTransform:'uppercase',textAlign:'center',transition:'color 0.2s'}}>
+                {d.d}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    );
+  }
+
+  /* ══ BADGES ══════════════════════════════════════════════════════════════════ */
+  function TipoBadge(props) {
+    var map={Reservas:'br',Cardapio:'bc',Localizacao:'bl'};
+    return <span className={'b '+(map[props.tipo]||'bo')}>{props.tipo}</span>;
+  }
+  function StBadge(props) {
+    var map={Positivo:['bp','↑'],Neutro:['bn','→'],Negativo:['be','↓']};
+    var info=map[props.st]||['bo','·'];
+    return <span className={'b '+info[0]}>{info[1]} {props.st}</span>;
+  }
+
+  /* ══ KPI CARD ════════════════════════════════════════════════════════════════ */
+  function KPICard(props) {
+    var cls='card kc'+(props.onClick?' clickable':'')+(props.active?' active-card':'');
+    return (
+      <div className={cls} onClick={props.onClick||undefined}
+        style={props.onClick?{cursor:'pointer'}:{}}>
+        <div className="cb">
+          <div className="klbl"><span className="kico">{props.icon}</span>{props.label}</div>
+          <div key={props.ak} className={'kval fi'+(props.sm?' sm':'')}>{props.value}</div>
+          <div className="kft">
+            <span className="ksub">{props.sub}</span>
+            {props.delta&&<span className={'b '+props.dt}>{props.delta}</span>}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  /* ══ CARD: LINE ══════════════════════════════════════════════════════════════ */
+  function CardLinha(props) {
+    return (
+      <div className="card">
+        <div className="ch">
+          <div>
+            <div className="ct">Atendimentos por Dia</div>
+            <div key={props.ak} className="cs fi">{props.label}</div>
+          </div>
+          <span className="b ba">+18% vs anterior</span>
+        </div>
+        <div className="cbdy">
+          <SvgLine data={props.data} activeDay={props.activeDay} setActiveDay={props.setActiveDay}/>
+          {props.activeDay&&(
+            <div style={{marginTop:8,fontSize:10,color:'var(--t2)',textAlign:'center'}}>
+              Clique no ponto novamente para desselecionar
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  /* ══ CARD: DONUT ═════════════════════════════════════════════════════════════ */
+  function CardDonut(props) {
+    var filterType=props.filterType;
+    var setFilterType=props.setFilterType;
+    var total=props.data.reduce(function(s,d){return s+d.value;},0);
+    return (
+      <div className="card">
+        <div className="ch">
+          <div>
+            <div className="ct">Tipos de Atendimento</div>
+            <div key={props.ak} className="cs fi">
+              {filterType?'Filtrando: '+filterType:total+' total'}
+            </div>
+          </div>
+        </div>
+        <div className="cbdy">
+          <SvgDonut data={props.data} filterType={filterType} setFilterType={setFilterType}/>
+          <div className="ll">
+            {props.data.map(function(d,i){
+              var isAct=filterType===d.name;
+              return (
+                <div key={i} className={'lr'+(isAct?' lr-act':'')}
+                  onClick={function(){setFilterType(isAct?null:d.name);}}>
+                  <div className="lft">
+                    <div className="ld" style={{background:d.color,opacity:filterType&&!isAct?0.3:1,transition:'opacity 0.2s'}}/>
+                    <span className="ll2" style={{opacity:filterType&&!isAct?0.4:1,transition:'opacity 0.2s'}}>{d.name}</span>
+                  </div>
+                  <div style={{display:'flex',alignItems:'center'}}>
+                    <span className="lp">{d.pct}</span>
+                    <span className="lv" style={{opacity:filterType&&!isAct?0.4:1,transition:'opacity 0.2s'}}>{d.value}</span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  /* ══ CARD: BARRAS ════════════════════════════════════════════════════════════ */
+  function CardBarras(props) {
+    return (
+      <div className="card">
+        <div className="ch">
+          <div>
+            <div className="ct">Almoco x Jantar</div>
+            <div key={props.ak} className="cs fi">{props.label}</div>
+          </div>
+          <div className="bleg">
+            <div className="bli"><div className="bls" style={{background:props.barAlt}}/>Almoco</div>
+            <div className="bli"><div className="bls" style={{background:'#E85D04'}}/>Jantar</div>
+          </div>
+        </div>
+        <div className="cbdy">
+          <CssBar data={props.data} barAlt={props.barAlt} activeDay={props.activeDay} setActiveDay={props.setActiveDay}/>
+        </div>
+      </div>
+    );
+  }
+
+  /* ══ CARD: TABELA ════════════════════════════════════════════════════════════ */
+  function CardTabela(props) {
+    var rows=props.rows, total=props.total, filterType=props.filterType;
+    return (
+      <div className="card">
+        <div className="ch">
+          <div>
+            <div className="ct">Ultimos Atendimentos</div>
+            <div className="cs">
+              {filterType
+                ? rows.length+' de '+total+' registros · '+filterType
+                : 'Registros de hoje · Tempo real'}
+            </div>
+          </div>
+          <div style={{width:8,height:8,borderRadius:'50%',background:'#22C55E',boxShadow:'0 0 7px rgba(34,197,94,.55)',marginTop:4}}/>
+        </div>
+        <div style={{padding:'10px 0 0'}}>
+          <div className="tscr">
+            <table>
+              <thead>
+                <tr><th>ID</th><th>Hora</th><th>Cliente</th><th>Tipo</th><th>Status</th><th>Detalhe</th></tr>
+              </thead>
+              <tbody>
+                {rows.length===0&&(
+                  <tr><td colSpan={6} style={{textAlign:'center',padding:28,color:'var(--t3)',fontStyle:'italic'}}>
+                    Nenhum registro encontrado
+                  </td></tr>
+                )}
+                {rows.map(function(r){
+                  return (
+                    <tr key={r.id}>
+                      <td style={{color:'var(--t3)',fontSize:11,fontFamily:'monospace'}}>{r.id}</td>
+                      <td style={{fontFamily:"'Playfair Display',serif",fontWeight:700,fontSize:13}}>{r.h}</td>
+                      <td style={{fontWeight:600}}>{r.cli}</td>
+                      <td><TipoBadge tipo={r.tipo}/></td>
+                      <td><StBadge st={r.st}/></td>
+                      <td style={{color:'var(--t2)',fontSize:11}}>{r.det}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  /* ══ APP ═════════════════════════════════════════════════════════════════════ */
+  function App() {
+    var ts=useState('dark');   var theme=ts[0]; var setTheme=ts[1];
+    var as=useState('semana'); var tab=as[0];   var setTab=as[1];
+    var fs=useState(null);     var filterType=fs[0]; var setFilterType=fs[1];
+    var ds=useState(null);     var activeDay=ds[0];  var setActiveDay=ds[1];
+    var ls=useState(function(){try{return localStorage.getItem('adh_logo')||null;}catch(e){return null;}}); var logoSrc=ls[0]; var setLogoSrc=ls[1];
+    var fileRef=useRef(null);
+    var clock=useClock();
+
+    function handleLogoFile(e) {
+      var file=e.target.files&&e.target.files[0];
+      if(!file) return;
+      var reader=new FileReader();
+      reader.onload=function(ev){
+        var url=ev.target.result;
+        setLogoSrc(url);
+        try{localStorage.setItem('adh_logo',url);}catch(err){}
+      };
+      reader.readAsDataURL(file);
+      e.target.value='';
+    }
+    function removeLogo(ev) {
+      ev.stopPropagation();
+      setLogoSrc(null);
+      try{localStorage.removeItem('adh_logo');}catch(err){}
+    }
+    var d=TABS[tab];
+    var barAlt=theme==='dark'?'#8A6A3A':'#C4854A';
+
+    useEffect(function(){document.documentElement.setAttribute('data-theme',theme);},[theme]);
+
+    function clearAll(){setFilterType(null);setActiveDay(null);}
+    function handleTab(id){setTab(id);clearAll();}
+
+    var filteredRows=filterType
+      ?ALL_ROWS.filter(function(r){return r.tipo===filterType;})
+      :ALL_ROWS;
+
+    var hasFilters=!!(filterType||activeDay);
+
+    var today=new Date().toLocaleDateString('pt-BR',{weekday:'long',day:'2-digit',month:'long',year:'numeric'});
+
+    return (
+      <React.Fragment>
+
+        {/* ── Header ── */}
+        <header className="hdr">
+          <div className="hdr-i">
+            <div className="brand">
+              {/* Logo clicável — upload de imagem */}
+              <div className="logo-wrap" onClick={function(){fileRef.current&&fileRef.current.click();}}>
+                {logoSrc
+                  ? <img src={logoSrc} className="logo-img" alt="Logo"/>
+                  : <FlameLogo size={46}/>
+                }
+                <div className="logo-ov">
+                  <span className="logo-ov-icon">📷</span>
+                  <span className="logo-ov-txt">Alterar</span>
+                </div>
+                {logoSrc&&(
+                  <button className="logo-reset" onClick={removeLogo} title="Remover foto">×</button>
+                )}
+              </div>
+              <input ref={fileRef} type="file" accept="image/*" style={{display:'none'}} onChange={handleLogoFile}/>
+              <div>
+                <div className="b-name">Alto da Hirant</div>
+                <div className="b-tag">Churrasco &amp; Cia</div>
+              </div>
+            </div>
+            <div className="hdr-r">
+              <div className="agt"><div className="dot"/>Agente IA Online</div>
+              <div className="date">{today}</div>
+              {clock&&<div className="clk">{clock}</div>}
+              <button className="tog-btn" aria-label="Tema"
+                onClick={function(){setTheme(function(t){return t==='dark'?'light':'dark';});}}>
+                <div className="tog-th">{theme==='dark'?'🌙':'☀️'}</div>
+              </button>
+            </div>
+          </div>
+        </header>
+
+        {/* ── Dashboard ── */}
+        <div className="dash">
+
+          {/* Tabs */}
+          <div className="tabs-w">
+            <div className="tabs">
+              {[['hoje','Hoje'],['semana','Esta Semana'],['mes','Este Mes']].map(function(item){
+                return (
+                  <button key={item[0]} className={'tab'+(tab===item[0]?' act':'')}
+                    onClick={function(){handleTab(item[0]);}}>
+                    {item[1]}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Filter chips */}
+          {hasFilters&&(
+            <div className="fchips">
+              <span className="fchip-lbl">Filtros ativos:</span>
+              {filterType&&(
+                <span className="b ba" style={{cursor:'pointer'}}
+                  onClick={function(){setFilterType(null);}}>
+                  {filterType} &times;
+                </span>
+              )}
+              {activeDay&&(
+                <span className="b bn" style={{cursor:'pointer'}}
+                  onClick={function(){setActiveDay(null);}}>
+                  {activeDay} &times;
+                </span>
+              )}
+              <button className="fclear" onClick={clearAll}>Limpar tudo</button>
+            </div>
+          )}
+
+          {/* KPIs */}
+          <div className="g4">
+            <KPICard icon="💬" label="Total Atendimentos"
+              value={d.kpis.total.value} sub={hasFilters?'Clique para limpar filtros':d.kpis.total.sub}
+              delta={hasFilters?'× limpar':d.kpis.total.delta} dt={hasFilters?'be':d.kpis.total.dt} ak={tab+'t'}
+              onClick={hasFilters?clearAll:undefined}
+            />
+            <KPICard icon="🍖" label="Reservas Realizadas"
+              value={d.kpis.reservas.value} sub={d.kpis.reservas.sub}
+              delta={d.kpis.reservas.delta} dt={d.kpis.reservas.dt} ak={tab+'r'}
+              active={filterType==='Reservas'}
+              onClick={function(){setFilterType(filterType==='Reservas'?null:'Reservas');}}
+            />
+            <KPICard icon="⭐" label="Satisfacao Geral" sm={true}
+              value={d.kpis.satisf.value} sub={d.kpis.satisf.sub}
+              delta={d.kpis.satisf.delta} dt={d.kpis.satisf.dt} ak={tab+'s'}
+            />
+            <KPICard icon="🔥" label="Horario de Pico" sm={true}
+              value={d.kpis.pico.value} sub={d.kpis.pico.sub}
+              delta={d.kpis.pico.delta} dt={d.kpis.pico.dt} ak={tab+'p'}
+            />
+          </div>
+
+          {/* Linha + Donut */}
+          <div className="g21">
+            <CardLinha data={d.linha} label={d.linhaLabel} ak={tab}
+              activeDay={activeDay} setActiveDay={setActiveDay}/>
+            <CardDonut data={d.donut} ak={tab}
+              filterType={filterType} setFilterType={setFilterType}/>
+          </div>
+
+          {/* Barras + Tabela */}
+          <div className="g11">
+            <CardBarras data={d.barras} label={d.barLabel} ak={tab} barAlt={barAlt}
+              activeDay={activeDay} setActiveDay={setActiveDay}/>
+            <CardTabela rows={filteredRows} total={ALL_ROWS.length} filterType={filterType}/>
+          </div>
+
+          {/* Footer */}
+          <footer className="ftr">
+            <div>
+              <div className="fb">Alto da Hirant · Churrasco &amp; Cia</div>
+              <div className="fm">Dashboard IA WhatsApp · Powered by Claude · Agencia RDG</div>
+            </div>
+            <div className="fr">
+              <div>Sistema de Gestao IA · v2.0</div>
+              <div style={{marginTop:3}}>2026 · Todos os direitos reservados</div>
+            </div>
+          </footer>
+        </div>
+
+      </React.Fragment>
+    );
+  }
+
+  ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>
