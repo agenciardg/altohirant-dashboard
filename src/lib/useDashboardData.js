@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { supabase } from './supabase'
-import { normTipo, normFeedback, isAlmoco } from './utils'
+import { normTipo, normFeedback, normTurno, isDiurno } from './utils'
+import { DIAS_ABREV, DONUT_COLORS, DONUT_ORDER } from './constants'
 
 /* ── Helpers de data ── */
 function isoDate(d) {
@@ -46,8 +47,6 @@ function dateRange(tab) {
   }
 }
 
-/* ── Mapeamentos ── (importados de utils.js) ── */
-
 function deltaPct(curr, prev) {
   if (!prev) return curr > 0 ? '+100%' : '0%'
   const d = Math.round(((curr - prev) / prev) * 100)
@@ -58,8 +57,6 @@ function deltaClass(pct) {
   if (pct.startsWith('-')) return 'be'
   return 'bn'
 }
-
-const DIAS_ABREV = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb']
 
 /* ── Linha ── */
 function buildLinha(rows, tab) {
@@ -101,18 +98,14 @@ function buildLinha(rows, tab) {
   return Object.entries(counts).map(([dia, total]) => ({ dia, total }))
 }
 
-/* ── Donut ── */
-const DONUT_COLORS = {
-  Reservas: '#E85D04', Cardapio: '#F97316', Localizacao: '#DC2626', Outros: '#6B4A1A',
-}
-const DONUT_ORDER = ['Reservas', 'Cardapio', 'Localizacao', 'Outros']
+/* ── Donut ── (DONUT_COLORS e DONUT_ORDER importados de constants.js) */
 
 function buildDonut(rows) {
   if (rows.length === 0) {
     // Placeholder visível para estado vazio
     return [{ name: 'Sem dados', value: 1, color: '#2A2A2A', pct: '—' }]
   }
-  const counts = { Reservas: 0, Cardapio: 0, Localizacao: 0, Outros: 0 }
+  const counts = { Reservas: 0, Cardapio: 0, Localizacao: 0, Geral: 0, Aniversario: 0, Reclamacao: 0, Outros: 0 }
   rows.forEach(r => { counts[normTipo(r.tipo_atendimento)]++ })
   const total = rows.length
   return DONUT_ORDER
@@ -130,27 +123,21 @@ function buildBarras(rows, tab) {
   const now = new Date()
 
   if (tab === 'hoje') {
-    const turnos = ['Manha', 'Almoco', 'Tarde', 'Jantar', 'Noite']
+    const turnos = ['Almoco', 'Happy Hour', 'Jantar']
+    const turnoMap = { 'Almoco': 'Almoco', 'Happy Hour': 'Happy Hour', 'Jantar': 'Jantar', 'Fora Horário': 'Jantar' }
     const counts = {}
     turnos.forEach(t => { counts[t] = { a: 0, j: 0 } })
     rows.forEach(r => {
-      const t = (r.turno || 'geral').toLowerCase()
-      const lbl =
-        t === 'manha' || t === 'manhã' ? 'Manha'
-          : t === 'almoco' || t === 'almoço' ? 'Almoco'
-            : t === 'tarde' ? 'Tarde'
-              : t === 'jantar' ? 'Jantar'
-                : 'Noite'
-      if (isAlmoco(r.turno)) counts[lbl].a++
+      const lbl = turnoMap[normTurno(r.turno)] || 'Jantar'
+      if (isDiurno(r.turno)) counts[lbl].a++
       else counts[lbl].j++
     })
     const result = turnos
       .filter(t => counts[t].a + counts[t].j > 0)
       .map(d => ({ d, ...counts[d] }))
-    // Retorna estrutura mínima se vazio
     return result.length > 0
       ? result
-      : [{ d: 'Manha', a: 0, j: 0 }, { d: 'Almoco', a: 0, j: 0 }, { d: 'Jantar', a: 0, j: 0 }]
+      : [{ d: 'Almoco', a: 0, j: 0 }, { d: 'Happy Hour', a: 0, j: 0 }, { d: 'Jantar', a: 0, j: 0 }]
   }
 
   if (tab === 'semana') {
@@ -164,7 +151,7 @@ function buildBarras(rows, tab) {
     days.forEach(({ iso }) => { counts[iso] = { a: 0, j: 0 } })
     rows.forEach(r => {
       if (counts[r.data]) {
-        if (isAlmoco(r.turno)) counts[r.data].a++
+        if (isDiurno(r.turno)) counts[r.data].a++
         else counts[r.data].j++
       }
     })
@@ -178,7 +165,7 @@ function buildBarras(rows, tab) {
   rows.forEach(r => {
     const day = new Date(r.data + 'T12:00:00').getDate()
     const sem = day <= 7 ? 'Sem 1' : day <= 14 ? 'Sem 2' : day <= 21 ? 'Sem 3' : 'Sem 4'
-    if (isAlmoco(r.turno)) counts[sem].a++
+    if (isDiurno(r.turno)) counts[sem].a++
     else counts[sem].j++
   })
   return sems.map(d => ({ d, ...counts[d] }))
@@ -208,10 +195,74 @@ function calcPico(rows) {
   const picoH = Object.entries(horaCounts).sort((a, b) => b[1] - a[1])[0]?.[0] || '00'
   const turnoCounts = {}
   rows.forEach(r => {
-    if (r.turno) turnoCounts[r.turno] = (turnoCounts[r.turno] || 0) + 1
+    const t = normTurno(r.turno)
+    turnoCounts[t] = (turnoCounts[t] || 0) + 1
   })
   const turno = Object.entries(turnoCounts).sort((a, b) => b[1] - a[1])[0]?.[0] || '--'
   return { hora: `${parseInt(picoH)}h`, turno }
+}
+
+/* ── Processamento dos dados ── */
+function processData(rows, prevRows, tab) {
+  const total = rows.length
+  const prevTotal = prevRows.length
+  const reservas = rows.filter(r => r.reserva_solicitada).length
+  const prevReservas = prevRows.filter(r => r.reserva_solicitada).length
+
+  const foraHorario = rows.filter(r => r.fora_horario).length
+  const prevForaHorario = prevRows.filter(r => r.fora_horario).length
+  const clientesUnicos = new Set(rows.map(r => r.numero_cliente).filter(Boolean)).size
+
+  const pico = calcPico(rows)
+  const totalDelta = deltaPct(total, prevTotal)
+  const reservasDelta = deltaPct(reservas, prevReservas)
+  const foraDelta = deltaPct(foraHorario, prevForaHorario)
+
+  const subLabel =
+    tab === 'hoje' ? 'vs. ontem'
+      : tab === 'semana' ? 'vs. 7 dias anteriores'
+        : 'vs. mês anterior'
+
+  return {
+    kpis: {
+      total:    { value: String(total),        sub: `${clientesUnicos} cliente${clientesUnicos !== 1 ? 's' : ''} único${clientesUnicos !== 1 ? 's' : ''}`, delta: totalDelta,    dt: deltaClass(totalDelta) },
+      reservas: { value: String(reservas),      sub: subLabel,               delta: reservasDelta, dt: deltaClass(reservasDelta) },
+      fora:     { value: String(foraHorario),   sub: subLabel,               delta: foraDelta,     dt: foraHorario > 0 ? 'be' : 'bn', sm: true },
+      pico:     { value: pico.hora,              sub: `Turno: ${pico.turno}`, delta: pico.turno,    dt: 'bn', sm: true },
+    },
+    linhaLabel:
+      tab === 'hoje' ? 'Hoje — Volume por hora'
+        : tab === 'semana' ? 'Últimos 7 dias — Volume diário'
+          : 'Este mês — Volume semanal',
+    linha: buildLinha(rows, tab),
+    donut: buildDonut(rows),
+    barLabel:
+      tab === 'hoje' ? 'Distribuição por turno'
+        : tab === 'semana' ? 'Almoço/HH x Jantar — 7 dias'
+          : 'Almoço/HH x Jantar — mensal',
+    barras: buildBarras(rows, tab),
+    tableRows: buildRows(rows),
+    rawRows: rows,
+    hasRealData: total > 0,
+    supabaseOk: true,
+  }
+}
+
+/* ── Fetch com retry ── */
+const MAX_RETRIES = 2
+const RETRY_DELAY = 1500
+
+async function fetchWithRetry(queryFn, retries = MAX_RETRIES) {
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    const res = await queryFn()
+    if (!res.error) return res
+    if (attempt < retries) {
+      console.warn(`[Supabase] Tentativa ${attempt + 1} falhou, retentando em ${RETRY_DELAY}ms...`, res.error.message)
+      await new Promise(r => setTimeout(r, RETRY_DELAY))
+    } else {
+      return res
+    }
+  }
 }
 
 /* ── Hook principal ── */
@@ -222,83 +273,52 @@ export function useDashboardData(tab) {
     setState(s => ({ ...s, loading: true }))
     let cancelled = false
 
-    async function fetch() {
+    async function load() {
       try {
         const { start, end, prevStart, prevEnd } = dateRange(tab)
 
         const [currRes, prevRes] = await Promise.all([
-          supabase
-            .from('alto_hirant_dashboard')
-            .select('*')
-            .gte('data', start)
-            .lte('data', end)
-            .order('criado_em', { ascending: false }),
-          supabase
-            .from('alto_hirant_dashboard')
-            .select('*')
-            .gte('data', prevStart)
-            .lte('data', prevEnd),
+          fetchWithRetry(() =>
+            supabase
+              .from('alto_hirant_dashboard')
+              .select('*')
+              .gte('data', start)
+              .lte('data', end)
+              .order('created_at', { ascending: false })
+          ),
+          fetchWithRetry(() =>
+            supabase
+              .from('alto_hirant_dashboard')
+              .select('*')
+              .gte('data', prevStart)
+              .lte('data', prevEnd)
+          ),
         ])
 
         if (cancelled) return
-        if (currRes.error) throw currRes.error
 
-        const rows = currRes.data || []
-        const prevRows = prevRes.data || []
-
-        const total = rows.length
-        const prevTotal = prevRows.length
-        const reservas = rows.filter(r => r.reserva_solicitada).length
-        const prevReservas = prevRows.filter(r => r.reserva_solicitada).length
-
-        const comFeedback = rows.filter(r => r.feedback_empresa)
-        const positivos = comFeedback.filter(r => normFeedback(r.feedback_empresa) === 'Positivo').length
-        const prevComFeedback = prevRows.filter(r => r.feedback_empresa)
-        const prevPositivos = prevComFeedback.filter(r => normFeedback(r.feedback_empresa) === 'Positivo').length
-        const satisfPct = comFeedback.length ? Math.round((positivos / comFeedback.length) * 100) : 0
-        const prevSatisfPct = prevComFeedback.length ? Math.round((prevPositivos / prevComFeedback.length) * 100) : 0
-
-        const pico = calcPico(rows)
-        const totalDelta = deltaPct(total, prevTotal)
-        const reservasDelta = deltaPct(reservas, prevReservas)
-        const satisfDelta = deltaPct(satisfPct, prevSatisfPct)
-
-        const subLabel =
-          tab === 'hoje' ? 'vs. ontem'
-            : tab === 'semana' ? 'vs. 7 dias anteriores'
-              : 'vs. mês anterior'
-
-        const data = {
-          kpis: {
-            total:    { value: String(total),    sub: subLabel,               delta: totalDelta,    dt: deltaClass(totalDelta) },
-            reservas: { value: String(reservas),  sub: subLabel,               delta: reservasDelta, dt: deltaClass(reservasDelta) },
-            satisf:   { value: satisfPct + '%',   sub: 'feedbacks positivos',  delta: satisfDelta,   dt: deltaClass(satisfDelta), sm: true },
-            pico:     { value: pico.hora,          sub: `Turno: ${pico.turno}`, delta: pico.turno,    dt: 'bn', sm: true },
-          },
-          linhaLabel:
-            tab === 'hoje' ? 'Hoje — Volume por hora'
-              : tab === 'semana' ? 'Últimos 7 dias — Volume diário'
-                : 'Este mês — Volume semanal',
-          linha: buildLinha(rows, tab),
-          donut: buildDonut(rows),
-          barLabel:
-            tab === 'hoje' ? 'Distribuição por turno'
-              : tab === 'semana' ? 'Almoço x Jantar — 7 dias'
-                : 'Almoço x Jantar — mensal',
-          barras: buildBarras(rows, tab),
-          tableRows: buildRows(rows),
-          rawRows: rows,           // dados brutos para os modais
-          hasRealData: total > 0,
-          supabaseOk: true,
+        if (currRes.error) {
+          console.error('[Supabase] Erro ao buscar dados atuais:', currRes.error)
+          throw currRes.error
         }
 
+        if (prevRes.error) {
+          console.warn('[Supabase] Erro ao buscar dados anteriores (continuando sem comparação):', prevRes.error.message)
+        }
+
+        const rows = currRes.data || []
+        const prevRows = prevRes.error ? [] : (prevRes.data || [])
+
+        const data = processData(rows, prevRows, tab)
         setState({ loading: false, data, error: null })
       } catch (err) {
-        if (!cancelled) setState({ loading: false, data: null, error: err.message })
+        const message = err?.message || 'Erro desconhecido ao carregar dados'
+        console.error('[useDashboardData]', { tab, error: err })
+        if (!cancelled) setState({ loading: false, data: null, error: message })
       }
     }
 
-    fetch()
+    load()
     return () => { cancelled = true }
   }, [tab])
 

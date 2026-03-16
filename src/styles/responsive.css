@@ -1,0 +1,18 @@
+/* ── Responsive ── */
+@media(max-width:1000px){
+  .g4{grid-template-columns:repeat(2,1fr)}
+  .g21,.g11{grid-template-columns:1fr}
+}
+@media(max-width:600px){
+  .g4{grid-template-columns:1fr 1fr}
+  .hdr-i{flex-wrap:wrap;gap:10px}
+  .kval{font-size:34px}
+  .b-name{font-size:16px}
+  .modal-backdrop{padding:12px}
+  .modal-box{max-width:100%;max-height:90vh}
+  .mrow{flex-direction:column;gap:6px}
+  .mrow-badges{max-width:none;justify-content:flex-start}
+  .mreg-grid{grid-template-columns:1fr}
+  .mstats{flex-wrap:wrap}
+  .mstat{min-width:calc(50% - 1px)}
+}

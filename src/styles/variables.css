@@ -1,0 +1,60 @@
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+/* ════════════════════════════════════════════════════════════════
+   DARK MODE — Volcanic Coal
+   ════════════════════════════════════════════════════════════════ */
+html[data-theme="dark"] {
+  --bg0: #080808;
+  --bg1: #0D0D0D;
+  --card: #111111;
+  --border: rgba(255,255,255,0.07);
+  --t1: #F0EAE0;
+  --t2: #B8A898;
+  --t3: #8A7A6A;
+  --grid: rgba(255,255,255,0.05);
+  --hover: rgba(232,93,4,0.08);
+  --tip: #1A1A1A;
+  --tab: #0D0D0D;
+  --hdr: rgba(8,8,8,0.94);
+  --tog: #1C1C1C;
+  --sh: rgba(232,93,4,0.30);
+  --sb: rgba(255,255,255,0.12);
+  --card-glow: 0 1px 0 0 rgba(255,255,255,0.04), 0 4px 24px rgba(0,0,0,0.6);
+  --card-grad: linear-gradient(160deg,#161616 0%,#111111 100%);
+}
+
+/* ════════════════════════════════════════════════════════════════
+   LIGHT MODE — Pergaminho Quente
+   ════════════════════════════════════════════════════════════════ */
+html[data-theme="light"] {
+  --bg0: #FFF8F0; --bg1: #FFF1E0;
+  --card: #FFFFFF; --border: #F0D4B0;
+  --t1: #1A0F00; --t2: #8A5A1A; --t3: #C4956A;
+  --grid: rgba(200,160,100,0.3);
+  --hover: rgba(232,93,4,0.04);
+  --tip: #FFFFFF; --tab: #FFF1E0;
+  --hdr: rgba(255,248,240,0.92);
+  --tog: #E85D04; --sh: rgba(232,93,4,0.18);
+  --sb: #F0D4B0;
+  --card-glow: none;
+  --card-grad: #FFFFFF;
+}
+
+body { font-family:'DM Sans',sans-serif; min-height:100vh; color:var(--t1); transition:color .35s; }
+
+html[data-theme="dark"]  body {
+  background: radial-gradient(ellipse 80% 50% at 50% -10%, rgba(232,93,4,0.06) 0%, transparent 55%),
+              #080808;
+  min-height: 100vh;
+}
+html[data-theme="light"] body { background:linear-gradient(155deg,#FFF8F0,#FFF1E0); }
+
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--sb);border-radius:3px}
+
+@keyframes fadeSlide { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+.fi { animation:fadeSlide .32s ease forwards }
+@keyframes tabFade { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
+.tab-content { animation:tabFade .45s cubic-bezier(0.22,1,0.36,1) forwards }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.5} }

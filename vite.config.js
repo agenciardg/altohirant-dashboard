@@ -7,5 +7,16 @@ export default defineConfig({
   server: {
     port: 5173,
     open: true
+  },
+  build: {
+    sourcemap: 'hidden',
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          vendor: ['react', 'react-dom'],
+          supabase: ['@supabase/supabase-js'],
+        }
+      }
+    }
   }
 })

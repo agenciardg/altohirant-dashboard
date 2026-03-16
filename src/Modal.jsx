@@ -1,5 +1,6 @@
-import { useEffect, useRef, useState } from 'react'
-import { normTipo, normFeedback } from './lib/utils'
+import { useEffect, useRef, useState, useCallback } from 'react'
+import { normTipo, normFeedback, isDiurno } from './lib/utils'
+import { DIAS_ABREV } from './lib/constants'
 
 /* ── Helpers ── */
 function fmt(hora) { return hora ? hora.slice(0, 5) : '--' }
@@ -12,19 +13,18 @@ function fmtData(data) {
 /* ── Sub-badges ── */
 function FBadge({ fb }) {
   if (!fb) return <span className="mb-badge mb-neutro">→ Sem feedback</span>
-  const n = normFeedback(fb)  // retorna 'Positivo' | 'Negativo' | 'Neutro'
+  const n = normFeedback(fb)
   const cls = n === 'Positivo' ? 'mb-positivo' : n === 'Negativo' ? 'mb-negativo' : 'mb-neutro'
   const ico = n === 'Positivo' ? '↑' : n === 'Negativo' ? '↓' : '→'
   return <span className={`mb-badge ${cls}`}>{ico} {n}</span>
 }
 function TBadge({ tipo }) {
-  const cls = { Reservas: 'mb-res', Cardapio: 'mb-car', Localizacao: 'mb-loc' }
+  const cls = { Reservas: 'mb-res', Cardapio: 'mb-car', Localizacao: 'mb-loc', Geral: 'mb-ger', Aniversario: 'mb-aniv', Reclamacao: 'mb-recl' }
   return <span className={`mb-badge ${cls[tipo] || 'mb-out'}`}>{tipo}</span>
 }
 function TurnoBadge({ turno }) {
   if (!turno) return null
-  const isA = ['manha', 'manhã', 'almoco', 'almoço'].includes(turno.toLowerCase())
-  return <span className={`mb-badge ${isA ? 'mb-almoco' : 'mb-jantar'}`}>{turno}</span>
+  return <span className={`mb-badge ${isDiurno(turno) ? 'mb-diurno' : 'mb-jantar'}`}>{turno}</span>
 }
 
 /* ── Linha de registro ── */
@@ -132,54 +132,23 @@ function ContentReservas({ rows }) {
   )
 }
 
-/* ── Conteúdo: Satisfação ── */
-function ContentSatisf({ rows }) {
-  const comFeedback = rows.filter(r => r.feedback_empresa)
-  const pos = comFeedback.filter(r => normFeedback(r.feedback_empresa) === 'Positivo').length
-  const neu = comFeedback.filter(r => normFeedback(r.feedback_empresa) === 'Neutro').length
-  const neg = comFeedback.filter(r => normFeedback(r.feedback_empresa) === 'Negativo').length
-  const total = comFeedback.length || 1
+/* ── Conteúdo: Fora do Horário ── */
+function ContentFora({ rows }) {
+  const fora = rows.filter(r => r.fora_horario)
+  const total = rows.length || 1
+  const pct = Math.round((fora.length / total) * 100)
 
   return (
     <>
       <div className="mstats">
-        <StatRow value={pos} label="Positivos" sub={Math.round(pos / total * 100) + '%'} />
-        <StatRow value={neu} label="Neutros"   sub={Math.round(neu / total * 100) + '%'} />
-        <StatRow value={neg} label="Negativos" sub={Math.round(neg / total * 100) + '%'} />
-        <StatRow value={comFeedback.length} label="Com feedback" />
+        <StatRow value={fora.length} label="Fora do horário" sub={`${pct}% do total`} />
+        <StatRow value={rows.length - fora.length} label="No horário" />
+        <StatRow value={rows.length} label="Total" />
       </div>
-      {comFeedback.length > 0 && (
-        <div className="msent-wrap">
-          <div className="msent-bar">
-            {pos > 0 && <div className="msent-pos" style={{ width: Math.round(pos / total * 100) + '%' }} />}
-            {neu > 0 && <div className="msent-neu" style={{ width: Math.round(neu / total * 100) + '%' }} />}
-            {neg > 0 && <div className="msent-neg" style={{ width: Math.round(neg / total * 100) + '%' }} />}
-          </div>
-          <div className="msent-leg">
-            <span className="msent-li msent-pos-li">↑ Positivo</span>
-            <span className="msent-li msent-neu-li">→ Neutro</span>
-            <span className="msent-li msent-neg-li">↓ Negativo</span>
-          </div>
-        </div>
-      )}
-      <div className="msec-title">Feedbacks recebidos</div>
-      {comFeedback.length === 0
-        ? <div className="mempty">Nenhum feedback neste período</div>
-        : comFeedback.map((r, i) => (
-          <div className="mrow" key={i}>
-            <div className="mrow-hora">
-              <span className="mrow-h">{fmt(r.hora)}</span>
-              <span className="mrow-d">{fmtData(r.data)}</span>
-            </div>
-            <div className="mrow-info">
-              <div className="mrow-cli">{r.nome_cliente || r.numero_cliente || 'Desconhecido'}</div>
-              {r.assunto_feedback && <div className="mrow-det">"{r.assunto_feedback}"</div>}
-            </div>
-            <div className="mrow-badges">
-              <FBadge fb={r.feedback_empresa} />
-            </div>
-          </div>
-        ))
+      <div className="msec-title">Atendimentos fora do horário</div>
+      {fora.length === 0
+        ? <div className="mempty">Nenhum atendimento fora do horário</div>
+        : fora.map((r, i) => <MRow key={i} row={r} />)
       }
     </>
   )
@@ -269,40 +238,33 @@ function ContentTipo({ rows, tipo }) {
   )
 }
 
-/* ── Conteúdo: Turno (Almoço/Jantar por dia) ── */
+/* ── Conteúdo: Turno (Dia/Tarde x Noite por dia) ── */
 function ContentTurno({ rows, dia }) {
   const filtered = dia ? rows.filter(r => {
-    const DIAS = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb']
-    const diaRow = DIAS[new Date(r.data + 'T12:00:00').getDay()]
+    const diaRow = DIAS_ABREV[new Date(r.data + 'T12:00:00').getDay()]
     return diaRow === dia
   }) : rows
 
-  const almoco = filtered.filter(r => {
-    const t = (r.turno || '').toLowerCase()
-    return ['manha', 'manhã', 'almoco', 'almoço'].includes(t)
-  })
-  const jantar = filtered.filter(r => {
-    const t = (r.turno || '').toLowerCase()
-    return !['manha', 'manhã', 'almoco', 'almoço'].includes(t)
-  })
+  const diaTarde = filtered.filter(r => isDiurno(r.turno))
+  const noite = filtered.filter(r => !isDiurno(r.turno))
 
   return (
     <>
       <div className="mstats">
-        <StatRow value={almoco.length} label="Almoço" sub={dia || 'período'} />
-        <StatRow value={jantar.length} label="Jantar" sub={dia || 'período'} />
+        <StatRow value={diaTarde.length} label="Almoço / HH" sub={dia || 'período'} />
+        <StatRow value={noite.length} label="Jantar" sub={dia || 'período'} />
         <StatRow value={filtered.length} label="Total" />
       </div>
-      {almoco.length > 0 && (
+      {diaTarde.length > 0 && (
         <>
-          <div className="msec-title">☀️ Almoço</div>
-          {almoco.map((r, i) => <MRow key={i} row={r} />)}
+          <div className="msec-title">☀️ Almoço / Happy Hour</div>
+          {diaTarde.map((r, i) => <MRow key={i} row={r} />)}
         </>
       )}
-      {jantar.length > 0 && (
+      {noite.length > 0 && (
         <>
-          <div className="msec-title">🌙 Jantar / Noite</div>
-          {jantar.map((r, i) => <MRow key={i} row={r} />)}
+          <div className="msec-title">🌙 Jantar</div>
+          {noite.map((r, i) => <MRow key={i} row={r} />)}
         </>
       )}
       {filtered.length === 0 && <div className="mempty">Nenhum atendimento{dia ? ` em ${dia}` : ''}</div>}
@@ -375,26 +337,80 @@ function ContentRegistro({ row }) {
   )
 }
 
-/* ══ MODAL BASE ═══════════════════════════════════════════════════════════════ */
-const MODAL_TITLES = {
-  total:    { icon: '💬', title: 'Total de Atendimentos', sub: 'Todos os registros do período' },
-  reservas: { icon: '🍖', title: 'Reservas Realizadas',   sub: 'Clientes que solicitaram reserva' },
-  satisf:   { icon: '⭐', title: 'Satisfação Geral',       sub: 'Feedbacks recebidos no período' },
-  pico:     { icon: '🔥', title: 'Horário de Pico',        sub: 'Distribuição de volume por hora' },
-  tipo:     { icon: '🍽', title: 'Tipo de Atendimento',   sub: 'Detalhes por categoria' },
-  turno:    { icon: '🕐', title: 'Almoço × Jantar',        sub: 'Distribuição por turno' },
-  registro: { icon: '📋', title: 'Detalhes do Atendimento', sub: 'Ficha completa' },
+/* ══ MODAL REGISTRY (factory pattern) ════════════════════════════════════════ */
+const MODAL_REGISTRY = {
+  total:    { icon: '💬', title: 'Total de Atendimentos',   sub: 'Todos os registros do período',      Component: ContentTotal,    prop: 'rows' },
+  reservas: { icon: '🍖', title: 'Reservas Realizadas',     sub: 'Clientes que solicitaram reserva',   Component: ContentReservas, prop: 'rows' },
+  fora:     { icon: '🕐', title: 'Fora do Horário',           sub: 'Atendimentos fora do expediente',    Component: ContentFora,     prop: 'rows' },
+  pico:     { icon: '🔥', title: 'Horário de Pico',          sub: 'Distribuição de volume por hora',    Component: ContentPico,     prop: 'rows' },
+  tipo:     { icon: '🍽', title: 'Tipo de Atendimento',     sub: 'Detalhes por categoria',             Component: ContentTipo,     prop: 'rows' },
+  turno:    { icon: '🕐', title: 'Almoço/HH × Jantar',        sub: 'Distribuição por turno',             Component: ContentTurno,    prop: 'rows' },
+  registro: { icon: '📋', title: 'Detalhes do Atendimento', sub: 'Ficha completa',                    Component: ContentRegistro, prop: 'row' },
 }
 
+function getSubtitle(type, data, meta) {
+  if (type === 'tipo') return `Categoria: ${data}`
+  if (type === 'turno') return data ? `Dia: ${data}` : 'Período completo'
+  return meta.sub
+}
+
+function getContentProps(type, data, rows) {
+  const entry = MODAL_REGISTRY[type]
+  if (!entry) return {}
+  if (type === 'tipo') return { rows, tipo: data }
+  if (type === 'turno') return { rows, dia: data }
+  if (type === 'registro') return { row: data }
+  return { rows }
+}
+
+/* ══ FOCUS TRAP HOOK ═════════════════════════════════════════════════════════ */
+function useFocusTrap(boxRef, isOpen) {
+  useEffect(() => {
+    if (!isOpen) return
+    const box = boxRef.current
+    if (!box) return
+
+    const FOCUSABLE = 'a[href], button:not([disabled]), textarea, input, select, [tabindex]:not([tabindex="-1"])'
+
+    function handleTab(e) {
+      if (e.key !== 'Tab') return
+      const focusable = box.querySelectorAll(FOCUSABLE)
+      if (focusable.length === 0) return
+      const first = focusable[0]
+      const last = focusable[focusable.length - 1]
+
+      if (e.shiftKey) {
+        if (document.activeElement === first) {
+          e.preventDefault()
+          last.focus()
+        }
+      } else {
+        if (document.activeElement === last) {
+          e.preventDefault()
+          first.focus()
+        }
+      }
+    }
+
+    // Foca o botão de fechar ao abrir
+    const closeBtn = box.querySelector('.modal-close')
+    if (closeBtn) closeBtn.focus()
+
+    box.addEventListener('keydown', handleTab)
+    return () => box.removeEventListener('keydown', handleTab)
+  }, [boxRef, isOpen])
+}
+
+/* ══ MODAL BASE ═══════════════════════════════════════════════════════════════ */
 export function Modal({ state, onClose, rawRows }) {
   const boxRef = useRef(null)
   const bodyRef = useRef(null)
   const drag = useRef(null)
-  const justResized = useRef(false)   // evita fechar o modal ao soltar após resize
+  const justResized = useRef(false)
   const rows = rawRows || []
-
-  // Tamanho persistente — só muda quando o usuário arrastar deliberadamente
   const [size, setSize] = useState({ w: null, h: null })
+
+  useFocusTrap(boxRef, !!state.type)
 
   useEffect(() => {
     const onKey = e => { if (e.key === 'Escape') onClose() }
@@ -412,16 +428,11 @@ export function Modal({ state, onClose, rawRows }) {
     return () => { document.body.style.overflow = '' }
   }, [state.type])
 
-  // Limpeza de segurança: remove listeners caso o componente desmonte durante drag
   useEffect(() => {
-    return () => {
-      if (drag.current) {
-        drag.current = null
-      }
-    }
+    return () => { drag.current = null }
   }, [])
 
-  function onResizeStart(e) {
+  const onResizeStart = useCallback((e) => {
     e.preventDefault()
     e.stopPropagation()
     const box = boxRef.current
@@ -433,24 +444,29 @@ export function Modal({ state, onClose, rawRows }) {
       startW: rect.width,
       startH: rect.height,
     }
+    let rafId = null
 
     function onMove(ev) {
       if (!drag.current || !box) return
-      const { startX, startY, startW, startH } = drag.current
-      const newW = Math.max(320, Math.min(window.innerWidth - 48, startW + (ev.clientX - startX)))
-      const newH = Math.max(260, Math.min(window.innerHeight - 48, startH + (ev.clientY - startY)))
-      box.style.width = newW + 'px'
-      box.style.height = newH + 'px'
-      box.style.maxWidth = 'none'
-      box.style.maxHeight = 'none'
+      if (rafId) cancelAnimationFrame(rafId)
+      rafId = requestAnimationFrame(() => {
+        if (!drag.current) return
+        const { startX, startY, startW, startH } = drag.current
+        const newW = Math.max(320, Math.min(window.innerWidth - 48, startW + (ev.clientX - startX)))
+        const newH = Math.max(260, Math.min(window.innerHeight - 48, startH + (ev.clientY - startY)))
+        box.style.width = newW + 'px'
+        box.style.height = newH + 'px'
+        box.style.maxWidth = 'none'
+        box.style.maxHeight = 'none'
+      })
     }
 
     function onUp() {
+      if (rafId) cancelAnimationFrame(rafId)
       if (!drag.current || !box) return
       const rect = box.getBoundingClientRect()
       setSize({ w: rect.width, h: rect.height })
       drag.current = null
-      // Marca que acabou de redimensionar para bloquear o click no backdrop
       justResized.current = true
       setTimeout(() => { justResized.current = false }, 100)
       document.removeEventListener('mousemove', onMove)
@@ -459,59 +475,50 @@ export function Modal({ state, onClose, rawRows }) {
 
     document.addEventListener('mousemove', onMove)
     document.addEventListener('mouseup', onUp)
-  }
+  }, [])
 
   if (!state.type) return null
 
-  const meta = MODAL_TITLES[state.type] || { icon: '📊', title: state.type, sub: '' }
+  const entry = MODAL_REGISTRY[state.type] || { icon: '📊', title: state.type, sub: '', Component: () => null }
+  const { Component } = entry
+  const subtitle = getSubtitle(state.type, state.data, entry)
+  const contentProps = getContentProps(state.type, state.data, rows)
 
-  let content
-  if (state.type === 'total')    content = <ContentTotal   rows={rows} />
-  if (state.type === 'reservas') content = <ContentReservas rows={rows} />
-  if (state.type === 'satisf')   content = <ContentSatisf  rows={rows} />
-  if (state.type === 'pico')     content = <ContentPico    rows={rows} />
-  if (state.type === 'tipo')     content = <ContentTipo    rows={rows} tipo={state.data} />
-  if (state.type === 'turno')    content = <ContentTurno   rows={rows} dia={state.data} />
-  if (state.type === 'registro') content = <ContentRegistro row={state.data} />
-
-  const subtitle = state.type === 'tipo' ? `Categoria: ${state.data}`
-    : state.type === 'turno' ? (state.data ? `Dia: ${state.data}` : 'Período completo')
-      : meta.sub
-
-  // Aplica tamanho salvo; se ainda não foi redimensionado usa as classes CSS
   const boxStyle = size.w
     ? { width: size.w + 'px', height: size.h + 'px', maxWidth: 'none', maxHeight: 'none' }
     : {}
 
   return (
-    <div className="modal-backdrop" onClick={e => { if (e.target === e.currentTarget && !justResized.current) onClose() }}>
+    <div
+      className="modal-backdrop"
+      role="dialog"
+      aria-modal="true"
+      aria-label={entry.title}
+      onClick={e => { if (e.target === e.currentTarget && !justResized.current) onClose() }}>
       <div className="modal-box" ref={boxRef} style={boxStyle}>
 
-        {/* Flame bar */}
         <div className="modal-flame" />
 
-        {/* Header — não rola junto com o conteúdo */}
         <div className="modal-hdr">
           <div className="modal-hdr-l">
-            <span className="modal-ico">{meta.icon}</span>
+            <span className="modal-ico">{entry.icon}</span>
             <div>
-              <div className="modal-title">{meta.title}</div>
+              <div className="modal-title">{entry.title}</div>
               <div className="modal-sub">{subtitle}</div>
             </div>
           </div>
           <button className="modal-close" onClick={onClose} aria-label="Fechar">✕</button>
         </div>
 
-        {/* Body scrollável */}
         <div className="modal-body" ref={bodyRef}>
-          {content}
+          <Component {...contentProps} />
         </div>
 
-        {/* Handle de redimensionamento — canto inferior direito */}
         <div
           className="modal-resize-handle"
           onMouseDown={onResizeStart}
           title="Arrastar para redimensionar"
+          aria-hidden="true"
         >
           <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
             <path d="M9 1L1 9M9 5L5 9M9 9H9" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
