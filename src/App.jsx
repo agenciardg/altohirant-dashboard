@@ -190,24 +190,23 @@ export default function App() {
               <KPICard icon="💬" label="Total Atendimentos" loading={loading}
                 value={d.kpis.total.value}
                 sub={hasFilters ? 'Ver todos · clique' : d.kpis.total.sub}
-                delta={hasFilters ? '× limpar filtros' : d.kpis.total.delta}
-                dt={hasFilters ? 'be' : d.kpis.total.dt} ak={tab + 't'}
+                ak={tab + 't'}
                 onClick={hasFilters ? clearAll : undefined}
                 onOpenModal={() => openModal('total')}
               />
               <KPICard icon="👤" label="Clientes Únicos" loading={loading}
                 value={String(d.clientesUnicos || 0)} sub={d.kpis.total.sub}
-                delta={d.clientesDelta || d.kpis.total.delta} dt={d.clientesDt || d.kpis.total.dt} ak={tab + 'u'}
+                ak={tab + 'u'}
                 onOpenModal={() => openModal('clientes')}
               />
               <KPICard icon="🕐" label="Fora do Horário" sm loading={loading}
                 value={d.kpis.fora.value} sub={d.kpis.fora.sub}
-                delta={d.kpis.fora.delta} dt={d.kpis.fora.dt} ak={tab + 'f'}
+                ak={tab + 'f'}
                 onOpenModal={() => openModal('fora')}
               />
               <KPICard icon="🔥" label="Horário de Pico" sm loading={loading}
                 value={d.kpis.pico.value} sub={d.kpis.pico.sub}
-                delta={d.kpis.pico.delta} dt={d.kpis.pico.dt} ak={tab + 'p'}
+                ak={tab + 'p'}
                 onOpenModal={() => openModal('pico')}
               />
             </div>

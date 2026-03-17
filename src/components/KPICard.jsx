@@ -1,6 +1,6 @@
 import { memo, useCallback } from 'react'
 
-function KPICardInner({ icon, label, value, sub, delta, dt, sm, onClick, active, ak, loading, onOpenModal }) {
+function KPICardInner({ icon, label, value, sub, sm, onClick, active, ak, loading, onOpenModal }) {
   const cls = `card kc clickable${active ? ' active-card' : ''}`
   const handleClick = useCallback(() => {
     if (onClick) onClick()
@@ -16,7 +16,6 @@ function KPICardInner({ icon, label, value, sub, delta, dt, sm, onClick, active,
         </div>
         <div className="kft">
           <span className="ksub">{loading ? '...' : sub}</span>
-          {delta && !loading && <span className={`b ${dt}`}>{delta}</span>}
         </div>
       </div>
     </div>

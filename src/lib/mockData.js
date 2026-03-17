@@ -2,10 +2,10 @@
 export const MOCK = {
   hoje: {
     kpis: {
-      total:    { value: '74',  sub: '12 clientes únicos',   delta: '+8%',    dt: 'bp' },
-      reservas: { value: '31',  sub: 'vs. ontem',            delta: '+12%',   dt: 'bp' },
-      fora:     { value: '5',   sub: 'vs. ontem',            delta: '+25%',   dt: 'be', sm: true },
-      pico:     { value: '19h', sub: 'Turno: Jantar',        delta: 'Jantar', dt: 'bn', sm: true },
+      total:    { value: '74',  sub: '12 clientes únicos' },
+      reservas: { value: '31',  sub: 'vs. ontem' },
+      fora:     { value: '5',   sub: 'vs. ontem', sm: true },
+      pico:     { value: '19h', sub: 'Turno: Jantar', sm: true },
     },
     clientesUnicos: 12,
     linhaLabel: 'Hoje — Volume por hora',
@@ -38,10 +38,10 @@ export const MOCK = {
   },
   semana: {
     kpis: {
-      total:    { value: '406', sub: '89 clientes únicos',    delta: '+18%',   dt: 'bp' },
-      reservas: { value: '182', sub: 'vs. semana anterior',   delta: '+24%',   dt: 'bp' },
-      fora:     { value: '18',  sub: 'vs. semana anterior',   delta: '+12%',   dt: 'be', sm: true },
-      pico:     { value: '13h', sub: 'Turno: Almoco',         delta: 'Almoco', dt: 'bn', sm: true },
+      total:    { value: '406', sub: '89 clientes únicos' },
+      reservas: { value: '182', sub: 'vs. semana anterior' },
+      fora:     { value: '18',  sub: 'vs. semana anterior', sm: true },
+      pico:     { value: '13h', sub: 'Turno: Almoco', sm: true },
     },
     clientesUnicos: 89,
     linhaLabel: 'Semana atual — Volume diário',
@@ -69,10 +69,10 @@ export const MOCK = {
   },
   mes: {
     kpis: {
-      total:    { value: '1840', sub: '312 clientes únicos',  delta: '+22%',   dt: 'bp' },
-      reservas: { value: '780',  sub: 'vs. mês anterior',     delta: '+31%',   dt: 'bp' },
-      fora:     { value: '72',   sub: 'vs. mês anterior',     delta: '+8%',    dt: 'be', sm: true },
-      pico:     { value: '20h',  sub: 'Turno: Jantar',        delta: 'Jantar', dt: 'bn', sm: true },
+      total:    { value: '1840', sub: '312 clientes únicos' },
+      reservas: { value: '780',  sub: 'vs. mês anterior' },
+      fora:     { value: '72',   sub: 'vs. mês anterior', sm: true },
+      pico:     { value: '20h',  sub: 'Turno: Jantar', sm: true },
     },
     clientesUnicos: 312,
     linhaLabel: 'Este mês — Volume semanal',

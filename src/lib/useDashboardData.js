@@ -47,17 +47,6 @@ function dateRange(tab) {
   }
 }
 
-function deltaPct(curr, prev) {
-  if (!prev) return curr > 0 ? '+100%' : '0%'
-  const d = Math.round(((curr - prev) / prev) * 100)
-  return d >= 0 ? `+${d}%` : `${d}%`
-}
-function deltaClass(pct) {
-  if (pct.startsWith('+')) return 'bp'
-  if (pct.startsWith('-')) return 'be'
-  return 'bn'
-}
-
 /* ── Linha ── */
 function buildLinha(rows, tab) {
   const now = new Date()
@@ -208,23 +197,13 @@ function calcPico(rows) {
 }
 
 /* ── Processamento dos dados ── */
-function processData(rows, prevRows, tab) {
+function processData(rows, _prevRows, tab) {
   const total = rows.length
-  const prevTotal = prevRows.length
   const reservas = rows.filter(r => r.reserva_solicitada).length
-  const prevReservas = prevRows.filter(r => r.reserva_solicitada).length
-
   const foraHorario = rows.filter(r => r.fora_horario).length
-  const prevForaHorario = prevRows.filter(r => r.fora_horario).length
   const clientesUnicos = new Set(rows.map(r => r.numero_cliente).filter(Boolean)).size
-  const prevClientesUnicos = new Set(prevRows.map(r => r.numero_cliente).filter(Boolean)).size
 
   const pico = calcPico(rows)
-  const totalDelta = deltaPct(total, prevTotal)
-  const reservasDelta = deltaPct(reservas, prevReservas)
-  const foraDelta = deltaPct(foraHorario, prevForaHorario)
-  const clientesDelta = deltaPct(clientesUnicos, prevClientesUnicos)
-
   const subLabel =
     tab === 'hoje' ? 'vs. ontem'
       : tab === 'semana' ? 'vs. 7 dias anteriores'
@@ -257,13 +236,11 @@ function processData(rows, prevRows, tab) {
 
   return {
     kpis: {
-      total:    { value: String(total),        sub: `${clientesUnicos} cliente${clientesUnicos !== 1 ? 's' : ''} único${clientesUnicos !== 1 ? 's' : ''}`, delta: totalDelta,    dt: deltaClass(totalDelta) },
-      reservas: { value: String(reservas),      sub: subLabel,               delta: reservasDelta, dt: deltaClass(reservasDelta) },
-      fora:     { value: String(foraHorario),   sub: subLabel,               delta: foraDelta,     dt: deltaClass(foraDelta), sm: true },
-      pico:     { value: pico.hora,              sub: `Turno: ${pico.turno}`, delta: pico.turno,    dt: 'bn', sm: true },
+      total:    { value: String(total),        sub: `${clientesUnicos} cliente${clientesUnicos !== 1 ? 's' : ''} único${clientesUnicos !== 1 ? 's' : ''}` },
+      reservas: { value: String(reservas),      sub: subLabel },
+      fora:     { value: String(foraHorario),   sub: subLabel, sm: true },
+      pico:     { value: pico.hora,              sub: `Turno: ${pico.turno}`, sm: true },
     },
-    clientesDelta,
-    clientesDt: deltaClass(clientesDelta),
     // KPIs extras
     clientesUnicos,
     reservasHoje,
