@@ -7,6 +7,7 @@ export const MOCK = {
       fora:     { value: '5',   sub: 'vs. ontem',            delta: '+25%',   dt: 'be', sm: true },
       pico:     { value: '19h', sub: 'Turno: Jantar',        delta: 'Jantar', dt: 'bn', sm: true },
     },
+    clientesUnicos: 12,
     linhaLabel: 'Hoje — Volume por hora',
     linha: [
       { dia: '10h', total: 3 }, { dia: '11h', total: 6 }, { dia: '12h', total: 14 },
@@ -22,17 +23,17 @@ export const MOCK = {
     ],
     barLabel: 'Distribuição por turno',
     barras: [
-      { d: 'Almoco', a: 28, j: 0 }, { d: 'Happy Hour', a: 16, j: 5 }, { d: 'Jantar', a: 0, j: 25 },
+      { d: 'Almoco', al: 28, hh: 0, j: 0 }, { d: 'Happy Hour', al: 0, hh: 16, j: 5 }, { d: 'Jantar', al: 0, hh: 0, j: 25 },
     ],
     tableRows: [
-      { id: '#001', h: '12:43', cli: 'Joao Silva',     tipo: 'Reservas',    st: 'Positivo', det: 'Mesa p/ 6 pessoas' },
-      { id: '#002', h: '12:51', cli: 'Maria Santos',   tipo: 'Cardapio',    st: 'Positivo', det: 'Opções vegetarianas' },
-      { id: '#003', h: '13:02', cli: 'Pedro Costa',    tipo: 'Localizacao', st: 'Neutro',   det: 'Rota via Google Maps' },
-      { id: '#004', h: '13:18', cli: 'Ana Lima',        tipo: 'Reservas',    st: 'Positivo', det: 'Reserva aniversário' },
-      { id: '#005', h: '13:31', cli: 'Carlos Mendes',  tipo: 'Cardapio',    st: 'Negativo', det: 'Dúvida sobre alergenos' },
-      { id: '#006', h: '13:45', cli: 'Lucia Ferreira', tipo: 'Reservas',    st: 'Positivo', det: 'Confirmação de reserva' },
-      { id: '#007', h: '14:02', cli: 'Roberto Alves',  tipo: 'Localizacao', st: 'Positivo', det: 'Estacionamento local' },
-      { id: '#008', h: '14:19', cli: 'Fernanda Rocha', tipo: 'Cardapio',    st: 'Neutro',   det: 'Preços do menu' },
+      { id: '#001', h: '12:43', cli: 'Joao Silva',     tipo: 'Reservas',    turno: 'Almoco',      st: 'Positivo' },
+      { id: '#002', h: '12:51', cli: 'Maria Santos',   tipo: 'Cardapio',    turno: 'Almoco',      st: 'Positivo' },
+      { id: '#003', h: '13:02', cli: 'Pedro Costa',    tipo: 'Localizacao', turno: 'Almoco',      st: 'Neutro' },
+      { id: '#004', h: '13:18', cli: 'Ana Lima',        tipo: 'Reservas',    turno: 'Almoco',      st: 'Positivo' },
+      { id: '#005', h: '18:31', cli: 'Carlos Mendes',  tipo: 'Cardapio',    turno: 'Happy Hour',  st: 'Negativo' },
+      { id: '#006', h: '19:45', cli: 'Lucia Ferreira', tipo: 'Reservas',    turno: 'Happy Hour',  st: 'Positivo' },
+      { id: '#007', h: '20:02', cli: 'Roberto Alves',  tipo: 'Localizacao', turno: 'Jantar',      st: 'Positivo' },
+      { id: '#008', h: '21:19', cli: 'Fernanda Rocha', tipo: 'Cardapio',    turno: 'Jantar',      st: 'Neutro' },
     ],
   },
   semana: {
@@ -42,6 +43,7 @@ export const MOCK = {
       fora:     { value: '18',  sub: 'vs. semana anterior',   delta: '+12%',   dt: 'be', sm: true },
       pico:     { value: '13h', sub: 'Turno: Almoco',         delta: 'Almoco', dt: 'bn', sm: true },
     },
+    clientesUnicos: 89,
     linhaLabel: 'Semana atual — Volume diário',
     linha: [
       { dia: 'Seg', total: 42 }, { dia: 'Ter', total: 38 }, { dia: 'Qua', total: 51 },
@@ -55,14 +57,14 @@ export const MOCK = {
     ],
     barLabel: 'Almoço/HH x Jantar — 7 dias',
     barras: [
-      { d: 'Seg', a: 22, j: 20 }, { d: 'Ter', a: 18, j: 20 }, { d: 'Qua', a: 25, j: 26 },
-      { d: 'Qui', a: 21, j: 24 }, { d: 'Sex', a: 30, j: 37 }, { d: 'Sab', a: 38, j: 51 }, { d: 'Dom', a: 32, j: 42 },
+      { d: 'Seg', al: 10, hh: 12, j: 20 }, { d: 'Ter', al: 8, hh: 10, j: 20 }, { d: 'Qua', al: 12, hh: 13, j: 26 },
+      { d: 'Qui', al: 10, hh: 11, j: 24 }, { d: 'Sex', al: 14, hh: 16, j: 37 }, { d: 'Sab', al: 18, hh: 20, j: 51 }, { d: 'Dom', al: 15, hh: 17, j: 42 },
     ],
     tableRows: [
-      { id: '#001', h: '12:43', cli: 'Joao Silva',     tipo: 'Reservas',    st: 'Positivo', det: 'Mesa p/ 6 pessoas' },
-      { id: '#002', h: '12:51', cli: 'Maria Santos',   tipo: 'Cardapio',    st: 'Positivo', det: 'Opções vegetarianas' },
-      { id: '#003', h: '13:02', cli: 'Pedro Costa',    tipo: 'Localizacao', st: 'Neutro',   det: 'Rota via Google Maps' },
-      { id: '#004', h: '13:18', cli: 'Ana Lima',        tipo: 'Reservas',    st: 'Positivo', det: 'Reserva aniversário' },
+      { id: '#001', h: '12:43', cli: 'Joao Silva',     tipo: 'Reservas',    turno: 'Almoco',      st: 'Positivo' },
+      { id: '#002', h: '12:51', cli: 'Maria Santos',   tipo: 'Cardapio',    turno: 'Almoco',      st: 'Positivo' },
+      { id: '#003', h: '13:02', cli: 'Pedro Costa',    tipo: 'Localizacao', turno: 'Almoco',      st: 'Neutro' },
+      { id: '#004', h: '19:18', cli: 'Ana Lima',        tipo: 'Reservas',    turno: 'Happy Hour',  st: 'Positivo' },
     ],
   },
   mes: {
@@ -72,6 +74,7 @@ export const MOCK = {
       fora:     { value: '72',   sub: 'vs. mês anterior',     delta: '+8%',    dt: 'be', sm: true },
       pico:     { value: '20h',  sub: 'Turno: Jantar',        delta: 'Jantar', dt: 'bn', sm: true },
     },
+    clientesUnicos: 312,
     linhaLabel: 'Este mês — Volume semanal',
     linha: [
       { dia: 'Sem 1', total: 380 }, { dia: 'Sem 2', total: 420 },
@@ -85,12 +88,12 @@ export const MOCK = {
     ],
     barLabel: 'Almoço/HH x Jantar — mensal',
     barras: [
-      { d: 'Sem 1', a: 165, j: 215 }, { d: 'Sem 2', a: 180, j: 240 },
-      { d: 'Sem 3', a: 198, j: 254 }, { d: 'Sem 4', a: 257, j: 331 },
+      { d: 'Sem 1', al: 75, hh: 90, j: 215 }, { d: 'Sem 2', al: 80, hh: 100, j: 240 },
+      { d: 'Sem 3', al: 88, hh: 110, j: 254 }, { d: 'Sem 4', al: 115, hh: 142, j: 331 },
     ],
     tableRows: [
-      { id: '#001', h: '12:43', cli: 'Joao Silva',     tipo: 'Reservas',    st: 'Positivo', det: 'Mesa p/ 6 pessoas' },
-      { id: '#002', h: '12:51', cli: 'Maria Santos',   tipo: 'Cardapio',    st: 'Positivo', det: 'Opções vegetarianas' },
+      { id: '#001', h: '12:43', cli: 'Joao Silva',     tipo: 'Reservas',    turno: 'Almoco',  st: 'Positivo' },
+      { id: '#002', h: '20:51', cli: 'Maria Santos',   tipo: 'Cardapio',    turno: 'Jantar',  st: 'Positivo' },
     ],
   },
 }

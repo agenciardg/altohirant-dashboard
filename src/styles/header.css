@@ -1,12 +1,12 @@
 /* ── Header ── */
 .hdr {
   position:sticky;top:0;z-index:100;
-  backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);
   border-bottom:1px solid var(--border);background:var(--hdr);
   transition:border-color .35s,background .35s;
+  transform:translateZ(0);
 }
 .hdr-i {
-  max-width:1280px;margin:0 auto;padding:14px 24px;
+  max-width:1280px;margin:0 auto;padding:10px 24px;
   display:flex;align-items:center;justify-content:space-between;
 }
 .brand{display:flex;align-items:center;gap:13px}
@@ -21,10 +21,10 @@
 .date{font-size:11px;font-weight:500;letter-spacing:.05em;color:var(--t2);transition:color .35s;text-transform:capitalize}
 .clk{font-family:'Playfair Display',serif;font-size:13px;font-weight:700;color:#E85D04;letter-spacing:.04em}
 .clk-brand{
-  font-family:'Playfair Display',serif;font-weight:900;font-size:28px;
+  font-family:'Playfair Display',serif;font-weight:900;font-size:22px;
   color:#E85D04;letter-spacing:.06em;line-height:1;
   align-self:center;
-  padding-left:16px;
+  padding-left:14px;
   margin-left:4px;
   border-left:1px solid rgba(180,120,60,0.35);
 }

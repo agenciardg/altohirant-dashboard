@@ -15,7 +15,7 @@ html[data-theme="dark"] {
   --hover: rgba(232,160,32,0.08);
   --tip: #1A1A1A;
   --tab: #1a1a1a;
-  --hdr: rgba(15,15,15,0.94);
+  --hdr: #0f0f0f;
   --tog: #1C1C1C;
   --sh: rgba(232,160,32,0.30);
   --sb: rgba(255,255,255,0.12);
@@ -47,7 +47,7 @@ html[data-theme="light"] {
   --grid: rgba(200,160,100,0.3);
   --hover: rgba(232,93,4,0.04);
   --tip: #FFFFFF; --tab: #FFF1E0;
-  --hdr: rgba(255,248,240,0.92);
+  --hdr: #FFF8F0;
   --tog: #E85D04; --sh: rgba(232,93,4,0.18);
   --sb: #F0D4B0;
   --card-glow: none;
@@ -81,8 +81,6 @@ html[data-theme="light"] body { background:linear-gradient(155deg,#FFF8F0,#FFF1E
 ::-webkit-scrollbar-track{background:transparent}
 ::-webkit-scrollbar-thumb{background:var(--sb);border-radius:3px}
 
-@keyframes fadeSlide { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
-.fi { animation:fadeSlide .32s ease forwards }
-@keyframes tabFade { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
-.tab-content { animation:tabFade .45s cubic-bezier(0.22,1,0.36,1) forwards }
+@keyframes fadeSlide { from{opacity:0} to{opacity:1} }
+.fi { animation:fadeSlide .2s ease forwards }
 @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.5} }

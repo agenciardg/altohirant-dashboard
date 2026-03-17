@@ -1,5 +1,5 @@
 import { memo } from 'react'
-import { normTipo, normFeedback } from '../lib/utils'
+import { normTipo, normFeedback, normTurno } from '../lib/utils'
 import { TipoBadge } from './Badges'
 
 function fmtData(data) {
@@ -111,7 +111,7 @@ function DetailPanelInner({ item, onClose }) {
             <Field label="TELEFONE" value={item.numero_cliente || '--'} />
             <Field label="DATA" value={fmtData(item.data)} />
             <Field label="HORA" value={fmtHora(item.hora)} />
-            <Field label="TURNO" value={capitalize(item.turno)} />
+            <Field label="TURNO" value={normTurno(item.turno)} />
             <Field label="TIPO">
               <TipoBadge tipo={normTipo(item.tipo_atendimento)} />
             </Field>

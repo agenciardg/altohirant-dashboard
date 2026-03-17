@@ -1,5 +1,5 @@
 import { useState, useEffect, memo } from 'react'
-import { TipoBadge, StBadge } from '../Badges'
+import { TipoBadge, StBadge, TurnoBadge } from '../Badges'
 import { PAGE_SIZE, COLORS } from '../../lib/constants'
 
 function CardTabelaInner({ rows, filterType, loading, hasRealData, supabaseOk, onOpenModal }) {
@@ -33,7 +33,7 @@ function CardTabelaInner({ rows, filterType, loading, hasRealData, supabaseOk, o
         <div className="tscr">
           <table>
             <thead>
-              <tr><th>ID</th><th>Hora</th><th>Cliente</th><th>Tipo</th><th>Status</th><th>Detalhe</th></tr>
+              <tr><th>ID</th><th>Hora</th><th>Cliente</th><th>Tipo</th><th>Turno</th><th>Feedback</th></tr>
             </thead>
             <tbody>
               {loading && (
@@ -54,8 +54,8 @@ function CardTabelaInner({ rows, filterType, loading, hasRealData, supabaseOk, o
                   <td style={{ fontFamily: "'Playfair Display',serif", fontWeight: 700, fontSize: 13 }}>{r.h}</td>
                   <td style={{ fontWeight: 600 }}>{r.cli}</td>
                   <td><TipoBadge tipo={r.tipo} /></td>
+                  <td><TurnoBadge turno={r.turno} /></td>
                   <td><StBadge st={r.st} /></td>
-                  <td style={{ color: 'var(--t2)', fontSize: 11 }}>{r.det}</td>
                 </tr>
               ))}
             </tbody>

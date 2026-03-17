@@ -118,41 +118,47 @@ function buildDonut(rows) {
     }))
 }
 
-/* ── Barras ── */
+/* ── Barras (3 turnos: al=Almoço, hh=Happy Hour, j=Jantar) ── */
+function classifyTurno(turno) {
+  const t = normTurno(turno)
+  if (t === 'Almoco') return 'al'
+  if (t === 'Happy Hour') return 'hh'
+  return 'j'
+}
+
 function buildBarras(rows, tab) {
   const now = new Date()
+  const empty = { al: 0, hh: 0, j: 0 }
 
   if (tab === 'hoje') {
     const turnos = ['Almoco', 'Happy Hour', 'Jantar']
-    const turnoMap = { 'Almoco': 'Almoco', 'Happy Hour': 'Happy Hour', 'Jantar': 'Jantar', 'Fora Horário': 'Jantar' }
     const counts = {}
-    turnos.forEach(t => { counts[t] = { a: 0, j: 0 } })
+    turnos.forEach(t => { counts[t] = { al: 0, hh: 0, j: 0 } })
     rows.forEach(r => {
-      const lbl = turnoMap[normTurno(r.turno)] || 'Jantar'
-      if (isDiurno(r.turno)) counts[lbl].a++
-      else counts[lbl].j++
+      const lbl = normTurno(r.turno)
+      const mapped = lbl === 'Fora Horário' ? 'Jantar' : (lbl === 'Almoco' || lbl === 'Happy Hour' || lbl === 'Jantar' ? lbl : 'Jantar')
+      const cls = classifyTurno(r.turno)
+      if (counts[mapped]) counts[mapped][cls]++
     })
     const result = turnos
-      .filter(t => counts[t].a + counts[t].j > 0)
+      .filter(t => counts[t].al + counts[t].hh + counts[t].j > 0)
       .map(d => ({ d, ...counts[d] }))
     return result.length > 0
       ? result
-      : [{ d: 'Almoco', a: 0, j: 0 }, { d: 'Happy Hour', a: 0, j: 0 }, { d: 'Jantar', a: 0, j: 0 }]
+      : [{ d: 'Almoco', ...empty }, { d: 'Happy Hour', ...empty }, { d: 'Jantar', ...empty }]
   }
 
   if (tab === 'semana') {
-    // Últimos 7 dias corridos
     const days = []
     for (let i = 6; i >= 0; i--) {
       const d = subDays(now, i)
       days.push({ iso: isoDate(d), label: DIAS_ABREV[d.getDay()] })
     }
     const counts = {}
-    days.forEach(({ iso }) => { counts[iso] = { a: 0, j: 0 } })
+    days.forEach(({ iso }) => { counts[iso] = { al: 0, hh: 0, j: 0 } })
     rows.forEach(r => {
       if (counts[r.data]) {
-        if (isDiurno(r.turno)) counts[r.data].a++
-        else counts[r.data].j++
+        counts[r.data][classifyTurno(r.turno)]++
       }
     })
     return days.map(({ iso, label }) => ({ d: label, ...counts[iso] }))
@@ -161,12 +167,11 @@ function buildBarras(rows, tab) {
   // mes — por semana
   const sems = ['Sem 1', 'Sem 2', 'Sem 3', 'Sem 4']
   const counts = {}
-  sems.forEach(s => { counts[s] = { a: 0, j: 0 } })
+  sems.forEach(s => { counts[s] = { al: 0, hh: 0, j: 0 } })
   rows.forEach(r => {
     const day = new Date(r.data + 'T12:00:00').getDate()
     const sem = day <= 7 ? 'Sem 1' : day <= 14 ? 'Sem 2' : day <= 21 ? 'Sem 3' : 'Sem 4'
-    if (isDiurno(r.turno)) counts[sem].a++
-    else counts[sem].j++
+    counts[sem][classifyTurno(r.turno)]++
   })
   return sems.map(d => ({ d, ...counts[d] }))
 }
@@ -179,7 +184,7 @@ function buildRows(rows) {
     cli: r.nome_cliente || r.numero_cliente || 'Desconhecido',
     tipo: normTipo(r.tipo_atendimento),
     st: normFeedback(r.feedback_empresa),
-    det: r.assunto_feedback || r.tool_chamada || r.tipo_atendimento || '—',
+    turno: normTurno(r.turno),
     _raw: r,
   }))
 }
@@ -212,11 +217,13 @@ function processData(rows, prevRows, tab) {
   const foraHorario = rows.filter(r => r.fora_horario).length
   const prevForaHorario = prevRows.filter(r => r.fora_horario).length
   const clientesUnicos = new Set(rows.map(r => r.numero_cliente).filter(Boolean)).size
+  const prevClientesUnicos = new Set(prevRows.map(r => r.numero_cliente).filter(Boolean)).size
 
   const pico = calcPico(rows)
   const totalDelta = deltaPct(total, prevTotal)
   const reservasDelta = deltaPct(reservas, prevReservas)
   const foraDelta = deltaPct(foraHorario, prevForaHorario)
+  const clientesDelta = deltaPct(clientesUnicos, prevClientesUnicos)
 
   const subLabel =
     tab === 'hoje' ? 'vs. ontem'
@@ -252,9 +259,11 @@ function processData(rows, prevRows, tab) {
     kpis: {
       total:    { value: String(total),        sub: `${clientesUnicos} cliente${clientesUnicos !== 1 ? 's' : ''} único${clientesUnicos !== 1 ? 's' : ''}`, delta: totalDelta,    dt: deltaClass(totalDelta) },
       reservas: { value: String(reservas),      sub: subLabel,               delta: reservasDelta, dt: deltaClass(reservasDelta) },
-      fora:     { value: String(foraHorario),   sub: subLabel,               delta: foraDelta,     dt: foraHorario > 0 ? 'be' : 'bn', sm: true },
+      fora:     { value: String(foraHorario),   sub: subLabel,               delta: foraDelta,     dt: deltaClass(foraDelta), sm: true },
       pico:     { value: pico.hora,              sub: `Turno: ${pico.turno}`, delta: pico.turno,    dt: 'bn', sm: true },
     },
+    clientesDelta,
+    clientesDt: deltaClass(clientesDelta),
     // KPIs extras
     clientesUnicos,
     reservasHoje,

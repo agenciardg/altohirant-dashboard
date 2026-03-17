@@ -17,7 +17,7 @@ function CardDonutInner({ data, filterType, setFilterType, ak, loading, onOpenMo
       </div>
       <div className="cbdy">
         {loading
-          ? <div style={{ height: 160, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--t2)', fontSize: 12 }}>Carregando...</div>
+          ? <div style={{ height: 130, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--t2)', fontSize: 12 }}>Carregando...</div>
           : <>
             <SvgDonut data={data} filterType={filterType} setFilterType={setFilterType} onOpenModal={onOpenModal} />
             <div className="ll">

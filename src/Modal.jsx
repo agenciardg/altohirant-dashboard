@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, useCallback } from 'react'
-import { normTipo, normFeedback, isDiurno } from './lib/utils'
+import { normTipo, normFeedback, normTurno, isDiurno } from './lib/utils'
 import { DIAS_ABREV } from './lib/constants'
 
 /* ── Helpers ── */
@@ -12,7 +12,6 @@ function fmtData(data) {
 
 /* ── Sub-badges ── */
 function FBadge({ fb }) {
-  if (!fb) return <span className="mb-badge mb-neutro">→ Sem feedback</span>
   const n = normFeedback(fb)
   const cls = n === 'Positivo' ? 'mb-positivo' : n === 'Negativo' ? 'mb-negativo' : 'mb-neutro'
   const ico = n === 'Positivo' ? '↑' : n === 'Negativo' ? '↓' : '→'
@@ -24,7 +23,8 @@ function TBadge({ tipo }) {
 }
 function TurnoBadge({ turno }) {
   if (!turno) return null
-  return <span className={`mb-badge ${isDiurno(turno) ? 'mb-diurno' : 'mb-jantar'}`}>{turno}</span>
+  const label = normTurno(turno)
+  return <span className={`mb-badge ${isDiurno(turno) ? 'mb-diurno' : 'mb-jantar'}`}>{label}</span>
 }
 
 /* ── Linha de registro ── */
@@ -40,8 +40,8 @@ function MRow({ row }) {
         {row.numero_cliente && row.nome_cliente && (
           <div className="mrow-tel">{row.numero_cliente}</div>
         )}
-        {(row.assunto_feedback || row.tool_chamada) && (
-          <div className="mrow-det">{row.assunto_feedback || row.tool_chamada}</div>
+        {row.assunto_feedback && (
+          <div className="mrow-det">{row.assunto_feedback}</div>
         )}
       </div>
       <div className="mrow-badges">
@@ -73,15 +73,15 @@ function ContentTotal({ rows }) {
     const t = normTipo(r.tipo_atendimento)
     porTipo[t] = (porTipo[t] || 0) + 1
   })
-  const reservas = rows.filter(r => r.reserva_solicitada).length
+  const clientesUnicos = new Set(rows.map(r => r.numero_cliente).filter(Boolean)).size
   const foraH = rows.filter(r => r.fora_horario).length
 
   return (
     <>
       <div className="mstats">
         <StatRow value={total} label="Total" />
-        <StatRow value={reservas} label="Reservas" sub={total ? Math.round(reservas / total * 100) + '%' : '—'} />
-        <StatRow value={foraH} label="Fora horário" />
+        <StatRow value={clientesUnicos} label="Clientes únicos" />
+        <StatRow value={foraH} label="Fora horário" sub={total ? Math.round(foraH / total * 100) + '%' : '—'} />
         {Object.entries(porTipo).map(([t, v]) => (
           <StatRow key={t} value={v} label={t} sub={total ? Math.round(v / total * 100) + '%' : '—'} />
         ))}
@@ -166,7 +166,7 @@ function ContentPico({ rows }) {
   const picoH = Object.entries(counts).sort((a, b) => b[1] - a[1])[0]
 
   const turnoCounts = {}
-  rows.forEach(r => { if (r.turno) turnoCounts[r.turno] = (turnoCounts[r.turno] || 0) + 1 })
+  rows.forEach(r => { if (r.turno) { const t = normTurno(r.turno); turnoCounts[t] = (turnoCounts[t] || 0) + 1 } })
   const turnoSorted = Object.entries(turnoCounts).sort((a, b) => b[1] - a[1])
 
   return (
@@ -215,6 +215,92 @@ function ContentPico({ rows }) {
           </div>
         </>
       )}
+    </>
+  )
+}
+
+/* ── Conteúdo: Feedbacks ── */
+function ContentFeedback({ rows }) {
+  const positivos = rows.filter(r => r.feedback_empresa && normFeedback(r.feedback_empresa) === 'Positivo')
+  const negativos = rows.filter(r => r.feedback_empresa && normFeedback(r.feedback_empresa) === 'Negativo')
+  const neutros = rows.filter(r => r.feedback_empresa && normFeedback(r.feedback_empresa) === 'Neutro')
+  const sem = rows.filter(r => !r.feedback_empresa)
+  const total = rows.length || 1
+
+  return (
+    <>
+      <div className="mstats">
+        <StatRow value={positivos.length} label="Positivos" sub={Math.round(positivos.length / total * 100) + '%'} />
+        <StatRow value={negativos.length} label="Negativos" sub={Math.round(negativos.length / total * 100) + '%'} />
+        <StatRow value={neutros.length} label="Neutros" sub={Math.round(neutros.length / total * 100) + '%'} />
+        <StatRow value={sem.length} label="Sem feedback" sub={Math.round(sem.length / total * 100) + '%'} />
+      </div>
+      {positivos.length > 0 && (
+        <>
+          <div className="msec-title">✅ Feedbacks positivos</div>
+          {positivos.map((r, i) => <MRow key={'p' + i} row={r} />)}
+        </>
+      )}
+      {negativos.length > 0 && (
+        <>
+          <div className="msec-title">⚠ Feedbacks negativos</div>
+          {negativos.map((r, i) => <MRow key={'n' + i} row={r} />)}
+        </>
+      )}
+      {neutros.length > 0 && (
+        <>
+          <div className="msec-title">→ Feedbacks neutros</div>
+          {neutros.map((r, i) => <MRow key={'u' + i} row={r} />)}
+        </>
+      )}
+      {positivos.length === 0 && negativos.length === 0 && neutros.length === 0 && (
+        <div className="mempty">Nenhum feedback registrado neste período</div>
+      )}
+    </>
+  )
+}
+
+/* ── Conteúdo: Clientes Únicos ── */
+function ContentClientes({ rows }) {
+  const grouped = {}
+  rows.forEach(r => {
+    const key = r.numero_cliente || 'desconhecido'
+    if (!grouped[key]) grouped[key] = { nome: r.nome_cliente || key, numero: key, atendimentos: [] }
+    if (r.nome_cliente && grouped[key].nome === key) grouped[key].nome = r.nome_cliente
+    grouped[key].atendimentos.push(r)
+  })
+  const clientes = Object.values(grouped).sort((a, b) => b.atendimentos.length - a.atendimentos.length)
+  const total = rows.length
+
+  return (
+    <>
+      <div className="mstats">
+        <StatRow value={clientes.length} label="Clientes únicos" />
+        <StatRow value={total} label="Atendimentos" />
+        <StatRow value={total && clientes.length ? (total / clientes.length).toFixed(1) : '—'} label="Média / cliente" />
+      </div>
+      <div className="msec-title">Clientes por volume de interações</div>
+      {clientes.length === 0
+        ? <div className="mempty">Nenhum cliente neste período</div>
+        : clientes.map((c, i) => (
+          <div className="mrow" key={i}>
+            <div className="mrow-hora">
+              <span className="mrow-h" style={{ fontSize: '1.1rem' }}>{c.atendimentos.length}×</span>
+            </div>
+            <div className="mrow-info">
+              <div className="mrow-cli">{c.nome}</div>
+              {c.nome !== c.numero && <div className="mrow-tel">{c.numero}</div>}
+              <div className="mrow-det">
+                {[...new Set(c.atendimentos.map(r => normTipo(r.tipo_atendimento)))].join(', ')}
+              </div>
+            </div>
+            <div className="mrow-badges">
+              {c.atendimentos.some(r => r.reserva_solicitada) && <span className="mb-badge mb-res">Reserva</span>}
+              {c.atendimentos.some(r => r.eh_aniversario) && <span className="mb-badge mb-aniv">🎂 Niver</span>}
+            </div>
+          </div>
+        ))
+      }
     </>
   )
 }
@@ -296,7 +382,7 @@ function ContentRegistro({ row }) {
         </div>
         <div className="mreg-field">
           <div className="mreg-lbl">Turno</div>
-          <div className="mreg-val">{row.turno || '—'}</div>
+          <div className="mreg-val">{row.turno ? normTurno(row.turno) : '—'}</div>
         </div>
         <div className="mreg-field">
           <div className="mreg-lbl">Tipo</div>
@@ -340,6 +426,8 @@ function ContentRegistro({ row }) {
 /* ══ MODAL REGISTRY (factory pattern) ════════════════════════════════════════ */
 const MODAL_REGISTRY = {
   total:    { icon: '💬', title: 'Total de Atendimentos',   sub: 'Todos os registros do período',      Component: ContentTotal,    prop: 'rows' },
+  feedback: { icon: '⭐', title: 'Feedbacks',               sub: 'Avaliações dos clientes',            Component: ContentFeedback, prop: 'rows' },
+  clientes: { icon: '👤', title: 'Clientes Únicos',         sub: 'Agrupados por número de telefone',   Component: ContentClientes, prop: 'rows' },
   reservas: { icon: '🍖', title: 'Reservas Realizadas',     sub: 'Clientes que solicitaram reserva',   Component: ContentReservas, prop: 'rows' },
   fora:     { icon: '🕐', title: 'Fora do Horário',           sub: 'Atendimentos fora do expediente',    Component: ContentFora,     prop: 'rows' },
   pico:     { icon: '🔥', title: 'Horário de Pico',          sub: 'Distribuição de volume por hora',    Component: ContentPico,     prop: 'rows' },
