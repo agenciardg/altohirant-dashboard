@@ -13,13 +13,18 @@ import { CardLinha } from './components/cards/CardLinha'
 import { CardDonut } from './components/cards/CardDonut'
 import { CardBarras } from './components/cards/CardBarras'
 import { CardTabela } from './components/cards/CardTabela'
+import { AlertBar } from './components/AlertBar'
+import { ReservasHoje } from './components/ReservasHoje'
+import { DetailPanel } from './components/DetailPanel'
+import { TurnoAtual } from './components/TurnoAtual'
 
 /* ══ APP ═════════════════════════════════════════════════════════════════════ */
 export default function App() {
   const [theme, setTheme] = useState('dark')
-  const [tab, setTab] = useState('semana')
+  const [tab, setTab] = useState('hoje')
   const [filterType, setFilterType] = useState(null)
   const [activeDay, setActiveDay] = useState(null)
+  const [selectedItem, setSelectedItem] = useState(null)
   const { logoSrc, updateLogo, removeLogo: removeLogoConfig } = useLogoConfig()
   const fileRef = useRef(null)
   const clock = useClock()
@@ -54,12 +59,14 @@ export default function App() {
   const barAlt = theme === 'dark' ? COLORS.barAltDark : COLORS.barAltLight
 
   const clearAll = useCallback(() => { setFilterType(null); setActiveDay(null) }, [])
-  const handleTab = useCallback((id) => { setTab(id); setFilterType(null); setActiveDay(null) }, [])
+  const handleTab = useCallback((id) => { setTab(id); setFilterType(null); setActiveDay(null); setSelectedItem(null) }, [])
   const toggleTheme = useCallback(() => setTheme(t => t === 'dark' ? 'light' : 'dark'), [])
 
   const allRows = d.tableRows || []
   const hasFilters = !!(filterType || activeDay)
   const today = new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' })
+
+  const isHoje = tab === 'hoje'
 
   return (
     <>
@@ -93,6 +100,15 @@ export default function App() {
         </div>
       </header>
 
+      {/* ── Alert Bar (só na aba HOJE) ── */}
+      {isHoje && (
+        <AlertBar
+          feedbackNegativo={d.feedbackNegativoHoje || 0}
+          aniversarios={d.aniversariosHoje || 0}
+          foraHorario={d.foraHorarioCount || 0}
+        />
+      )}
+
       {/* ── Dashboard ── */}
       <div className="dash">
 
@@ -107,8 +123,8 @@ export default function App() {
           </div>
         </div>
 
-        {/* Filter chips */}
-        {hasFilters && (
+        {/* Filter chips (apenas SEMANA e MÊS) */}
+        {!isHoje && hasFilters && (
           <div className="fchips">
             <span className="fchip-lbl">Filtros ativos:</span>
             {filterType && (
@@ -125,58 +141,111 @@ export default function App() {
           </div>
         )}
 
-        {/* Conteúdo da aba — anima ao trocar */}
-        <div key={tab} className="tab-content">
+        {/* ════════════════════════════════════════════════════════════════
+            ABA HOJE — Layout operacional (padrão F)
+            ════════════════════════════════════════════════════════════════ */}
+        {isHoje && (
+          <div key="hoje" className="tab-content">
+            {/* Métricas compactas — topo (clicáveis) */}
+            <div className="metricas-compactas" style={{ marginTop: 22 }}>
+              <div className="metrica-mini card-animated metrica-mini--click" onClick={() => openModal('total')} title="Ver todos os atendimentos">
+                <div className="metrica-mini__label">Atendimentos</div>
+                <div className="metrica-mini__valor">{loading ? '—' : d.kpis.total.value}</div>
+              </div>
+              <div className="metrica-mini card-animated metrica-mini--click" onClick={() => openModal('total')} title="Ver feedbacks">
+                <div className="metrica-mini__label">Feedback +</div>
+                <div className="metrica-mini__valor">
+                  {loading ? '—' : String(rawRows.filter(r => r.feedback_empresa && r.feedback_empresa.toLowerCase().includes('positiv')).length)}
+                </div>
+              </div>
+              <div className="metrica-mini card-animated metrica-mini--click" onClick={() => openModal('fora')} title="Ver fora do horário">
+                <div className="metrica-mini__label">Fora horário</div>
+                <div className="metrica-mini__valor">{loading ? '—' : d.kpis.fora.value}</div>
+              </div>
+            </div>
 
-        {/* KPIs */}
-        <div className="g4">
-          <KPICard icon="💬" label="Total Atendimentos" loading={loading}
-            value={d.kpis.total.value}
-            sub={hasFilters ? 'Ver todos · clique' : d.kpis.total.sub}
-            delta={hasFilters ? '× limpar filtros' : d.kpis.total.delta}
-            dt={hasFilters ? 'be' : d.kpis.total.dt} ak={tab + 't'}
-            onClick={hasFilters ? clearAll : undefined}
-            onOpenModal={() => openModal('total')}
-          />
-          <KPICard icon="🍖" label="Reservas Realizadas" loading={loading}
-            value={d.kpis.reservas.value} sub={d.kpis.reservas.sub}
-            delta={d.kpis.reservas.delta} dt={d.kpis.reservas.dt} ak={tab + 'r'}
-            active={filterType === 'Reservas'}
-            onClick={() => setFilterType(filterType === 'Reservas' ? null : 'Reservas')}
-            onOpenModal={() => openModal('reservas')}
-          />
-          <KPICard icon="🕐" label="Fora do Horário" sm loading={loading}
-            value={d.kpis.fora.value} sub={d.kpis.fora.sub}
-            delta={d.kpis.fora.delta} dt={d.kpis.fora.dt} ak={tab + 'f'}
-            onOpenModal={() => openModal('fora')}
-          />
-          <KPICard icon="🔥" label="Horário de Pico" sm loading={loading}
-            value={d.kpis.pico.value} sub={d.kpis.pico.sub}
-            delta={d.kpis.pico.delta} dt={d.kpis.pico.dt} ak={tab + 'p'}
-            onOpenModal={() => openModal('pico')}
-          />
-        </div>
+            <div className="dashboard-hoje">
+              {/* Coluna principal */}
+              <div className="dashboard-hoje__main">
+                <ReservasHoje
+                  reservas={d.reservasHoje}
+                  onSelectReserva={(item) => setSelectedItem(item)}
+                />
 
-        {/* Linha + Donut */}
-        <div className="g21">
-          <CardLinha data={d.linha} label={d.linhaLabel} ak={tab} loading={loading}
-            activeDay={activeDay} setActiveDay={setActiveDay} />
-          <CardDonut data={d.donut} ak={tab} loading={loading}
-            filterType={filterType} setFilterType={setFilterType}
-            onOpenModal={(tipo) => openModal('tipo', tipo)} />
-        </div>
+                <CardTabela
+                  rows={allRows.slice(0, 15)}
+                  filterType={null}
+                  loading={loading}
+                  hasRealData={hasRealData}
+                  supabaseOk={supabaseOk}
+                  onOpenModal={(row) => setSelectedItem(row)}
+                />
+              </div>
 
-        {/* Barras + Tabela */}
-        <div className="g11">
-          <CardBarras data={d.barras} label={d.barLabel} ak={tab} barAlt={barAlt} loading={loading}
-            activeDay={activeDay} setActiveDay={setActiveDay}
-            onOpenModal={(dia) => openModal('turno', dia)} />
-          <CardTabela rows={allRows} filterType={filterType} loading={loading}
-            hasRealData={hasRealData} supabaseOk={supabaseOk}
-            onOpenModal={(row) => openModal('registro', row)} />
-        </div>
+              {/* Sidebar */}
+              <div className="dashboard-hoje__sidebar">
+                <DetailPanel
+                  item={selectedItem}
+                  onClose={() => setSelectedItem(null)}
+                />
+                <TurnoAtual />
+              </div>
+            </div>
+          </div>
+        )}
 
-        </div>{/* /tab-content */}
+        {/* ════════════════════════════════════════════════════════════════
+            ABAS SEMANA / MÊS — Layout analítico (original)
+            ════════════════════════════════════════════════════════════════ */}
+        {!isHoje && (
+          <div key={tab} className="tab-content">
+            {/* KPIs */}
+            <div className="g4">
+              <KPICard icon="💬" label="Total Atendimentos" loading={loading}
+                value={d.kpis.total.value}
+                sub={hasFilters ? 'Ver todos · clique' : d.kpis.total.sub}
+                delta={hasFilters ? '× limpar filtros' : d.kpis.total.delta}
+                dt={hasFilters ? 'be' : d.kpis.total.dt} ak={tab + 't'}
+                onClick={hasFilters ? clearAll : undefined}
+                onOpenModal={() => openModal('total')}
+              />
+              <KPICard icon="👤" label="Clientes Únicos" loading={loading}
+                value={String(d.clientesUnicos || 0)} sub={d.kpis.total.sub}
+                delta={d.kpis.total.delta} dt={d.kpis.total.dt} ak={tab + 'u'}
+                onOpenModal={() => openModal('total')}
+              />
+              <KPICard icon="🕐" label="Fora do Horário" sm loading={loading}
+                value={d.kpis.fora.value} sub={d.kpis.fora.sub}
+                delta={d.kpis.fora.delta} dt={d.kpis.fora.dt} ak={tab + 'f'}
+                onOpenModal={() => openModal('fora')}
+              />
+              <KPICard icon="🔥" label="Horário de Pico" sm loading={loading}
+                value={d.kpis.pico.value} sub={d.kpis.pico.sub}
+                delta={d.kpis.pico.delta} dt={d.kpis.pico.dt} ak={tab + 'p'}
+                onOpenModal={() => openModal('pico')}
+              />
+            </div>
+
+            {/* Linha + Donut */}
+            <div className="g21">
+              <CardLinha data={d.linha} label={d.linhaLabel} ak={tab} loading={loading}
+                activeDay={activeDay} setActiveDay={setActiveDay} />
+              <CardDonut data={d.donut} ak={tab} loading={loading}
+                filterType={filterType} setFilterType={setFilterType}
+                onOpenModal={(tipo) => openModal('tipo', tipo)} />
+            </div>
+
+            {/* Barras + Tabela */}
+            <div className="g11">
+              <CardBarras data={d.barras} label={d.barLabel} ak={tab} barAlt={barAlt} loading={loading}
+                activeDay={activeDay} setActiveDay={setActiveDay}
+                onOpenModal={(dia) => openModal('turno', dia)} />
+              <CardTabela rows={allRows} filterType={filterType} loading={loading}
+                hasRealData={hasRealData} supabaseOk={supabaseOk}
+                onOpenModal={(row) => openModal('registro', row)} />
+            </div>
+          </div>
+        )}
 
         {/* Footer */}
         <footer className="ftr">

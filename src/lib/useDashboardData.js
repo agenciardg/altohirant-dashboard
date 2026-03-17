@@ -223,6 +223,31 @@ function processData(rows, prevRows, tab) {
       : tab === 'semana' ? 'vs. 7 dias anteriores'
         : 'vs. mês anterior'
 
+  /* ── KPIs extras para aba HOJE ── */
+  const hoje = isoDate(new Date())
+
+  // Reservas de hoje: registros com data_reserva_pedida = hoje
+  const reservasHoje = rows
+    .filter(r => r.data_reserva_pedida === hoje)
+    .map(r => ({
+      nome_cliente: r.nome_cliente,
+      numero_cliente: r.numero_cliente,
+      hora: r.hora,
+      qtd_pessoas: r.qtd_pessoas,
+      eh_aniversario: r.eh_aniversario,
+      data_reserva_pedida: r.data_reserva_pedida,
+      _raw: r,
+    }))
+
+  // Aniversários hoje: eh_aniversario = true E data = hoje
+  const aniversariosHoje = rows.filter(r => r.eh_aniversario && r.data === hoje).length
+
+  // Feedback negativo hoje: feedback_empresa = 'negativo' E data = hoje
+  const feedbackNegativoHoje = rows.filter(r => {
+    if (!r.feedback_empresa) return false
+    return r.feedback_empresa.trim().toLowerCase().includes('negativ') && r.data === hoje
+  }).length
+
   return {
     kpis: {
       total:    { value: String(total),        sub: `${clientesUnicos} cliente${clientesUnicos !== 1 ? 's' : ''} único${clientesUnicos !== 1 ? 's' : ''}`, delta: totalDelta,    dt: deltaClass(totalDelta) },
@@ -230,6 +255,12 @@ function processData(rows, prevRows, tab) {
       fora:     { value: String(foraHorario),   sub: subLabel,               delta: foraDelta,     dt: foraHorario > 0 ? 'be' : 'bn', sm: true },
       pico:     { value: pico.hora,              sub: `Turno: ${pico.turno}`, delta: pico.turno,    dt: 'bn', sm: true },
     },
+    // KPIs extras
+    clientesUnicos,
+    reservasHoje,
+    aniversariosHoje,
+    feedbackNegativoHoje,
+    foraHorarioCount: foraHorario,
     linhaLabel:
       tab === 'hoje' ? 'Hoje — Volume por hora'
         : tab === 'semana' ? 'Últimos 7 dias — Volume diário'

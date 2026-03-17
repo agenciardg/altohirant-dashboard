@@ -131,6 +131,166 @@ tbody td{font-size:12px;font-weight:500;color:var(--t1);padding:9px 14px;transit
 .fclear{background:none;border:1px solid var(--border);cursor:pointer;font-size:9px;color:var(--t2);font-weight:700;letter-spacing:.1em;text-transform:uppercase;padding:3px 9px;border-radius:20px;transition:all .2s;font-family:'DM Sans',sans-serif}
 .fclear:hover{border-color:#E85D04;color:#E85D04}
 
+/* ── Layout Aba HOJE (padrão F) ── */
+.dashboard-hoje {
+  display: grid;
+  grid-template-columns: 1fr 380px;
+  gap: 1rem;
+  min-height: calc(100vh - 200px);
+  margin-top: 22px;
+}
+.dashboard-hoje__main {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  overflow-y: auto;
+}
+.dashboard-hoje__sidebar {
+  position: sticky;
+  top: 1rem;
+  align-self: start;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+/* ── Métricas compactas ── */
+.metricas-compactas {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.75rem;
+  padding: 1rem 0;
+}
+.metrica-mini {
+  background: var(--card-grad, var(--card));
+  border: 1px solid var(--border);
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  text-align: center;
+  box-shadow: var(--card-glow, none);
+  transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
+}
+.metrica-mini--click {
+  cursor: pointer;
+}
+.metrica-mini--click:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px var(--sh, rgba(232,160,32,0.15));
+  border-color: rgba(232,160,32,0.3);
+}
+.metrica-mini__label {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-weight: 600;
+  color: var(--t2, #9a9590);
+  margin-bottom: 0.25rem;
+}
+.metrica-mini__valor {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.3rem;
+  font-weight: 600;
+  color: var(--t1, #f0ece4);
+}
+
+/* ── Reservas de Hoje ── */
+.reservas-hoje-card {
+  background: var(--card-grad, var(--card));
+  border: 1px solid var(--border);
+  border-left: 3px solid #e8a020;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: var(--card-glow, none);
+}
+.reservas-hoje-header {
+  padding: 1rem 1.25rem 0.75rem;
+}
+.reservas-hoje-title {
+  font-family: 'Playfair Display', serif;
+  font-weight: 700;
+  font-size: 15px;
+  color: var(--t1);
+}
+.reservas-hoje-sub {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--t2);
+  margin-top: 3px;
+}
+.reservas-hoje-empty {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 1.5rem 1.25rem;
+  color: var(--t3);
+  font-size: 0.9rem;
+}
+.reservas-hoje-list {
+  padding: 0 0 0.5rem;
+}
+.reservas-hoje-item {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.6rem 1.25rem;
+  cursor: pointer;
+  transition: background 0.18s;
+}
+.reservas-hoje-item:hover {
+  background: rgba(232, 160, 32, 0.08);
+}
+.reservas-hoje-hora {
+  font-family: monospace;
+  color: #e8a020;
+  font-size: 1.1rem;
+  font-weight: 700;
+  min-width: 50px;
+}
+.reservas-hoje-info {
+  flex: 1;
+}
+.reservas-hoje-nome {
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: var(--t1);
+}
+.reservas-hoje-badges {
+  display: flex;
+  gap: 0.4rem;
+  margin-top: 0.2rem;
+}
+.reservas-hoje-badge-pessoas {
+  background: rgba(150, 150, 150, 0.15);
+  color: #9a9590;
+  padding: 0.1rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+.reservas-hoje-badge-niver {
+  background: rgba(232, 160, 32, 0.2);
+  color: #e8a020;
+  padding: 0.1rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+/* ── Animação staggered ── */
+@keyframes fadeSlideIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.card-animated {
+  animation: fadeSlideIn 0.3s ease-out both;
+}
+.card-animated:nth-child(1) { animation-delay: 0ms; }
+.card-animated:nth-child(2) { animation-delay: 50ms; }
+.card-animated:nth-child(3) { animation-delay: 100ms; }
+.card-animated:nth-child(4) { animation-delay: 150ms; }
+
 /* ── Footer ── */
 .ftr{margin-top:42px;padding:20px 0;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;transition:border-color .35s}
 .fb{font-family:'Playfair Display',serif;font-weight:700;font-size:14px;letter-spacing:.07em;color:var(--t1);transition:color .35s}
