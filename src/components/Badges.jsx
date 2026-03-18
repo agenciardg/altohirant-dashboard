@@ -1,7 +1,7 @@
 import { memo } from 'react'
 
 function TipoBadgeInner({ tipo }) {
-  const map = { Reservas: 'br', Cardapio: 'bc', Localizacao: 'bl' }
+  const map = { Reservas: 'br', Programacao: 'bprog', Cardapio: 'bc', Localizacao: 'bl', Aniversario: 'baniv', Reclamacao: 'brecl', Geral: 'bger' }
   return <span className={`b ${map[tipo] || 'bo'}`}>{tipo}</span>
 }
 

@@ -94,7 +94,7 @@ function buildDonut(rows) {
     // Placeholder visível para estado vazio
     return [{ name: 'Sem dados', value: 1, color: '#2A2A2A', pct: '—' }]
   }
-  const counts = { Reservas: 0, Cardapio: 0, Localizacao: 0, Geral: 0, Aniversario: 0, Reclamacao: 0, Outros: 0 }
+  const counts = { Reservas: 0, Programacao: 0, Cardapio: 0, Localizacao: 0, Geral: 0, Aniversario: 0, Reclamacao: 0, Outros: 0 }
   rows.forEach(r => { counts[normTipo(r.tipo_atendimento)]++ })
   const total = rows.length
   return DONUT_ORDER
@@ -202,6 +202,20 @@ function processData(rows, _prevRows, tab) {
   const reservas = rows.filter(r => r.reserva_solicitada).length
   const foraHorario = rows.filter(r => r.fora_horario).length
   const clientesUnicos = new Set(rows.map(r => r.numero_cliente).filter(Boolean)).size
+  const aniversariosUnicos = new Set(rows.filter(r => r.eh_aniversario).map(r => r.numero_cliente).filter(Boolean)).size
+  const reclamacoes = rows.filter(r => normTipo(r.tipo_atendimento) === 'Reclamacao').length
+  const programacaoCount = rows.filter(r => normTipo(r.tipo_atendimento) === 'Programacao').length
+
+  // Satisfação: apenas registros com feedback_empresa IS NOT NULL
+  const comFeedback = rows.filter(r => r.feedback_empresa != null)
+  const positivos = comFeedback.filter(r => normFeedback(r.feedback_empresa) === 'Positivo').length
+  const negativos = comFeedback.filter(r => normFeedback(r.feedback_empresa) === 'Negativo').length
+  const satisfacao = (positivos + negativos) > 0
+    ? Math.round((positivos / (positivos + negativos)) * 100)
+    : null
+  const taxaFeedback = total > 0
+    ? Math.round((comFeedback.length / total) * 100)
+    : 0
 
   const pico = calcPico(rows)
   const subLabel =
@@ -234,12 +248,28 @@ function processData(rows, _prevRows, tab) {
     return r.feedback_empresa.trim().toLowerCase().includes('negativ') && r.data === hoje
   }).length
 
+  // Interesse por programação — ranking de dia_programacao_interesse
+  const progInteresse = {}
+  rows.forEach(r => {
+    if (r.dia_programacao_interesse) {
+      progInteresse[r.dia_programacao_interesse] = (progInteresse[r.dia_programacao_interesse] || 0) + 1
+    }
+  })
+  const progRanking = Object.entries(progInteresse)
+    .sort((a, b) => b[1] - a[1])
+    .map(([dia, count]) => ({ dia, count }))
+  const diaMaisProcurado = progRanking[0] || null
+
   return {
     kpis: {
       total:    { value: String(total),        sub: `${clientesUnicos} cliente${clientesUnicos !== 1 ? 's' : ''} único${clientesUnicos !== 1 ? 's' : ''}` },
-      reservas: { value: String(reservas),      sub: subLabel },
+      reservas: { value: String(reservas),      sub: 'link GetIn enviado' },
       fora:     { value: String(foraHorario),   sub: subLabel, sm: true },
       pico:     { value: pico.hora,              sub: `Turno: ${pico.turno}`, sm: true },
+      aniversarios: { value: String(aniversariosUnicos), sub: 'clientes únicos' },
+      satisfacao: { value: satisfacao != null ? `${satisfacao}%` : '—', sub: `${comFeedback.length} feedbacks (${taxaFeedback}% taxa)` },
+      reclamacoes: { value: String(reclamacoes), sub: subLabel },
+      programacao: { value: String(programacaoCount), sub: diaMaisProcurado ? `Top: ${diaMaisProcurado.dia}` : '—' },
     },
     // KPIs extras
     clientesUnicos,
@@ -247,6 +277,12 @@ function processData(rows, _prevRows, tab) {
     aniversariosHoje,
     feedbackNegativoHoje,
     foraHorarioCount: foraHorario,
+    satisfacao,
+    taxaFeedback,
+    reclamacoes,
+    programacaoCount,
+    progRanking,
+    diaMaisProcurado,
     linhaLabel:
       tab === 'hoje' ? 'Hoje — Volume por hora'
         : tab === 'semana' ? 'Últimos 7 dias — Volume diário'

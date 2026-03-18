@@ -140,11 +140,13 @@ export default function App() {
                 <div className="metrica-mini__label">Atendimentos</div>
                 <div className="metrica-mini__valor">{loading ? '—' : d.kpis.total.value}</div>
               </div>
-              <div className="metrica-mini metrica-mini--click" onClick={() => openModal('feedback')} title="Ver feedbacks">
-                <div className="metrica-mini__label">Feedback +</div>
-                <div className="metrica-mini__valor">
-                  {loading ? '—' : String(rawRows.filter(r => r.feedback_empresa && r.feedback_empresa.toLowerCase().includes('positiv')).length)}
-                </div>
+              <div className="metrica-mini metrica-mini--click" onClick={() => openModal('reservas')} title="Ver reservas (link GetIn)">
+                <div className="metrica-mini__label">Reservas</div>
+                <div className="metrica-mini__valor">{loading ? '—' : d.kpis.reservas.value}</div>
+              </div>
+              <div className="metrica-mini metrica-mini--click" onClick={() => openModal('feedback')} title="Ver satisfação">
+                <div className="metrica-mini__label">Satisfação</div>
+                <div className="metrica-mini__valor">{loading ? '—' : d.kpis.satisfacao?.value || '—'}</div>
               </div>
               <div className="metrica-mini metrica-mini--click" onClick={() => openModal('fora')} title="Ver fora do horário">
                 <div className="metrica-mini__label">Fora horário</div>
@@ -185,9 +187,9 @@ export default function App() {
             ABAS SEMANA / MÊS — Layout analítico (original)
             ════════════════════════════════════════════════════════════════ */}
           <div className={`tab-panel${isHoje ? ' tab-panel--hidden' : ''}`}>
-            {/* KPIs */}
+            {/* KPIs — linha 1 */}
             <div className="g4">
-              <KPICard icon="💬" label="Total Atendimentos" loading={loading}
+              <KPICard icon="💬" label="Total Interações" loading={loading}
                 value={d.kpis.total.value}
                 sub={hasFilters ? 'Ver todos · clique' : d.kpis.total.sub}
                 ak={tab + 't'}
@@ -198,6 +200,29 @@ export default function App() {
                 value={String(d.clientesUnicos || 0)} sub={d.kpis.total.sub}
                 ak={tab + 'u'}
                 onOpenModal={() => openModal('clientes')}
+              />
+              <KPICard icon="🍖" label="Reservas" loading={loading}
+                value={d.kpis.reservas.value} sub={d.kpis.reservas.sub}
+                ak={tab + 'r'}
+                onOpenModal={() => openModal('reservas')}
+              />
+              <KPICard icon="🎂" label="Aniversários" sm loading={loading}
+                value={d.kpis.aniversarios?.value || '0'} sub={d.kpis.aniversarios?.sub || '—'}
+                ak={tab + 'a'}
+                onOpenModal={() => openModal('aniversarios')}
+              />
+            </div>
+            {/* KPIs — linha 2 */}
+            <div className="g4" style={{ marginTop: 0 }}>
+              <KPICard icon="⭐" label="Satisfação" loading={loading}
+                value={d.kpis.satisfacao?.value || '—'} sub={d.kpis.satisfacao?.sub || '—'}
+                ak={tab + 's'}
+                onOpenModal={() => openModal('feedback')}
+              />
+              <KPICard icon="⚠️" label="Reclamações" sm loading={loading}
+                value={d.kpis.reclamacoes?.value || '0'} sub={d.kpis.reclamacoes?.sub || '—'}
+                ak={tab + 'rc'}
+                onOpenModal={() => openModal('reclamacoes')}
               />
               <KPICard icon="🕐" label="Fora do Horário" sm loading={loading}
                 value={d.kpis.fora.value} sub={d.kpis.fora.sub}

@@ -18,7 +18,7 @@ function FBadge({ fb }) {
   return <span className={`mb-badge ${cls}`}>{ico} {n}</span>
 }
 function TBadge({ tipo }) {
-  const cls = { Reservas: 'mb-res', Cardapio: 'mb-car', Localizacao: 'mb-loc', Geral: 'mb-ger', Aniversario: 'mb-aniv', Reclamacao: 'mb-recl' }
+  const cls = { Reservas: 'mb-res', Programacao: 'mb-prog', Cardapio: 'mb-car', Localizacao: 'mb-loc', Geral: 'mb-ger', Aniversario: 'mb-aniv', Reclamacao: 'mb-recl' }
   return <span className={`mb-badge ${cls[tipo] || 'mb-out'}`}>{tipo}</span>
 }
 function TurnoBadge({ turno }) {
@@ -219,41 +219,77 @@ function ContentPico({ rows }) {
   )
 }
 
-/* ── Conteúdo: Feedbacks ── */
+/* ── Conteúdo: Feedbacks / Satisfação ── */
 function ContentFeedback({ rows }) {
-  const positivos = rows.filter(r => r.feedback_empresa && normFeedback(r.feedback_empresa) === 'Positivo')
-  const negativos = rows.filter(r => r.feedback_empresa && normFeedback(r.feedback_empresa) === 'Negativo')
-  const neutros = rows.filter(r => r.feedback_empresa && normFeedback(r.feedback_empresa) === 'Neutro')
+  // v2: feedback_empresa NULL = sem feedback (ignorar no cálculo de satisfação)
+  const comFeedback = rows.filter(r => r.feedback_empresa != null)
+  const positivos = comFeedback.filter(r => normFeedback(r.feedback_empresa) === 'Positivo')
+  const negativos = comFeedback.filter(r => normFeedback(r.feedback_empresa) === 'Negativo')
+  const neutros = comFeedback.filter(r => normFeedback(r.feedback_empresa) === 'Neutro')
   const sem = rows.filter(r => !r.feedback_empresa)
   const total = rows.length || 1
+
+  // Índice de satisfação: (positivo / (positivo + negativo)) * 100 — apenas feedback real
+  const satisfacao = (positivos.length + negativos.length) > 0
+    ? Math.round((positivos.length / (positivos.length + negativos.length)) * 100)
+    : null
+  const taxaFeedback = Math.round((comFeedback.length / total) * 100)
+
+  // Assuntos de feedback agrupados
+  const assuntos = {}
+  comFeedback.forEach(r => {
+    const a = r.assunto_feedback || 'outro'
+    assuntos[a] = (assuntos[a] || 0) + 1
+  })
+  const assuntosSorted = Object.entries(assuntos).sort((a, b) => b[1] - a[1])
 
   return (
     <>
       <div className="mstats">
-        <StatRow value={positivos.length} label="Positivos" sub={Math.round(positivos.length / total * 100) + '%'} />
-        <StatRow value={negativos.length} label="Negativos" sub={Math.round(negativos.length / total * 100) + '%'} />
-        <StatRow value={neutros.length} label="Neutros" sub={Math.round(neutros.length / total * 100) + '%'} />
+        {satisfacao != null && <StatRow value={`${satisfacao}%`} label="Índice de Satisfação" sub="positivo / (pos + neg)" />}
+        <StatRow value={`${taxaFeedback}%`} label="Taxa de Feedback" sub={`${comFeedback.length} de ${total}`} />
+        <StatRow value={positivos.length} label="Positivos" sub={comFeedback.length ? Math.round(positivos.length / comFeedback.length * 100) + '%' : '—'} />
+        <StatRow value={negativos.length} label="Negativos" sub={comFeedback.length ? Math.round(negativos.length / comFeedback.length * 100) + '%' : '—'} />
         <StatRow value={sem.length} label="Sem feedback" sub={Math.round(sem.length / total * 100) + '%'} />
       </div>
+
+      {assuntosSorted.length > 0 && (
+        <>
+          <div className="msec-title">Assuntos de feedback</div>
+          <div className="mpico-chart">
+            {assuntosSorted.map(([a, v]) => (
+              <div key={a} className="mpico-row">
+                <div className="mpico-lbl" style={{ textTransform: 'capitalize' }}>{a}</div>
+                <div className="mpico-bar-wrap">
+                  <div className="mpico-bar" style={{ width: Math.round((v / comFeedback.length) * 100) + '%', background: '#F97316' }} />
+                </div>
+                <div className="mpico-val">{v}</div>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
+
       {positivos.length > 0 && (
         <>
-          <div className="msec-title">✅ Feedbacks positivos</div>
+          <div className="msec-title">Feedbacks positivos</div>
           {positivos.map((r, i) => <MRow key={'p' + i} row={r} />)}
         </>
       )}
       {negativos.length > 0 && (
         <>
-          <div className="msec-title">⚠ Feedbacks negativos</div>
-          {negativos.map((r, i) => <MRow key={'n' + i} row={r} />)}
+          <div className="msec-title">Feedbacks negativos</div>
+          {negativos.slice(0, 10).map((r, i) => <MRow key={'n' + i} row={r} />)}
+          {negativos.length > 10 && <div className="mempty">...e mais {negativos.length - 10} negativos</div>}
         </>
       )}
       {neutros.length > 0 && (
         <>
-          <div className="msec-title">→ Feedbacks neutros</div>
+          <div className="msec-title">Feedbacks neutros</div>
           {neutros.map((r, i) => <MRow key={'u' + i} row={r} />)}
         </>
       )}
-      {positivos.length === 0 && negativos.length === 0 && neutros.length === 0 && (
+      {comFeedback.length === 0 && (
         <div className="mempty">Nenhum feedback registrado neste período</div>
       )}
     </>
@@ -297,6 +333,90 @@ function ContentClientes({ rows }) {
             <div className="mrow-badges">
               {c.atendimentos.some(r => r.reserva_solicitada) && <span className="mb-badge mb-res">Reserva</span>}
               {c.atendimentos.some(r => r.eh_aniversario) && <span className="mb-badge mb-aniv">🎂 Niver</span>}
+            </div>
+          </div>
+        ))
+      }
+    </>
+  )
+}
+
+/* ── Conteúdo: Reclamações ── */
+function ContentReclamacoes({ rows }) {
+  const reclamacoes = rows.filter(r => normTipo(r.tipo_atendimento) === 'Reclamacao')
+  const total = rows.length || 1
+  const pct = Math.round((reclamacoes.length / total) * 100)
+
+  const assuntos = {}
+  reclamacoes.forEach(r => {
+    const a = r.assunto_feedback || 'outro'
+    assuntos[a] = (assuntos[a] || 0) + 1
+  })
+  const assuntosSorted = Object.entries(assuntos).sort((a, b) => b[1] - a[1])
+
+  return (
+    <>
+      <div className="mstats">
+        <StatRow value={reclamacoes.length} label="Reclamações" sub={`${pct}% do total`} />
+        <StatRow value={rows.length} label="Total interações" />
+      </div>
+      {assuntosSorted.length > 0 && (
+        <>
+          <div className="msec-title">Assuntos das reclamações</div>
+          <div className="mpico-chart">
+            {assuntosSorted.map(([a, v]) => (
+              <div key={a} className="mpico-row">
+                <div className="mpico-lbl" style={{ textTransform: 'capitalize' }}>{a}</div>
+                <div className="mpico-bar-wrap">
+                  <div className="mpico-bar" style={{ width: Math.round((v / reclamacoes.length) * 100) + '%', background: '#DC2626' }} />
+                </div>
+                <div className="mpico-val">{v}</div>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
+      <div className="msec-title">Todas as reclamações</div>
+      {reclamacoes.length === 0
+        ? <div className="mempty">Nenhuma reclamação neste período</div>
+        : reclamacoes.map((r, i) => <MRow key={i} row={r} />)
+      }
+    </>
+  )
+}
+
+/* ── Conteúdo: Aniversários ── */
+function ContentAniversarios({ rows }) {
+  const aniversarios = rows.filter(r => r.eh_aniversario)
+  const clientesUnicos = new Set(aniversarios.map(r => r.numero_cliente).filter(Boolean)).size
+  const mediaGrupo = aniversarios.filter(r => r.qtd_pessoas).length > 0
+    ? (aniversarios.filter(r => r.qtd_pessoas).reduce((s, r) => s + r.qtd_pessoas, 0) / aniversarios.filter(r => r.qtd_pessoas).length).toFixed(1)
+    : '—'
+
+  return (
+    <>
+      <div className="mstats">
+        <StatRow value={clientesUnicos} label="Clientes aniversariantes" />
+        <StatRow value={aniversarios.length} label="Interações" />
+        <StatRow value={mediaGrupo} label="Média pessoas/grupo" />
+      </div>
+      <div className="msec-title">Aniversariantes</div>
+      {aniversarios.length === 0
+        ? <div className="mempty">Nenhum aniversário neste período</div>
+        : aniversarios.map((r, i) => (
+          <div className="mrow" key={i}>
+            <div className="mrow-hora">
+              <span className="mrow-h">{fmt(r.hora)}</span>
+              <span className="mrow-d">{fmtData(r.data)}</span>
+            </div>
+            <div className="mrow-info">
+              <div className="mrow-cli">{r.nome_cliente || r.numero_cliente || 'Desconhecido'}</div>
+              {r.qtd_pessoas && <div className="mrow-det">{r.qtd_pessoas} pessoas</div>}
+              {r.data_reserva_pedida && <div className="mrow-det">Reserva: {fmtData(r.data_reserva_pedida)}</div>}
+            </div>
+            <div className="mrow-badges">
+              <span className="mb-badge mb-aniv">Aniversário</span>
+              {r.reserva_solicitada && <span className="mb-badge mb-res">Reserva</span>}
             </div>
           </div>
         ))
@@ -425,15 +545,17 @@ function ContentRegistro({ row }) {
 
 /* ══ MODAL REGISTRY (factory pattern) ════════════════════════════════════════ */
 const MODAL_REGISTRY = {
-  total:    { icon: '💬', title: 'Total de Atendimentos',   sub: 'Todos os registros do período',      Component: ContentTotal,    prop: 'rows' },
-  feedback: { icon: '⭐', title: 'Feedbacks',               sub: 'Avaliações dos clientes',            Component: ContentFeedback, prop: 'rows' },
-  clientes: { icon: '👤', title: 'Clientes Únicos',         sub: 'Agrupados por número de telefone',   Component: ContentClientes, prop: 'rows' },
-  reservas: { icon: '🍖', title: 'Reservas Realizadas',     sub: 'Clientes que solicitaram reserva',   Component: ContentReservas, prop: 'rows' },
-  fora:     { icon: '🕐', title: 'Fora do Horário',           sub: 'Atendimentos fora do expediente',    Component: ContentFora,     prop: 'rows' },
-  pico:     { icon: '🔥', title: 'Horário de Pico',          sub: 'Distribuição de volume por hora',    Component: ContentPico,     prop: 'rows' },
-  tipo:     { icon: '🍽', title: 'Tipo de Atendimento',     sub: 'Detalhes por categoria',             Component: ContentTipo,     prop: 'rows' },
-  turno:    { icon: '🕐', title: 'Almoço/HH × Jantar',        sub: 'Distribuição por turno',             Component: ContentTurno,    prop: 'rows' },
-  registro: { icon: '📋', title: 'Detalhes do Atendimento', sub: 'Ficha completa',                    Component: ContentRegistro, prop: 'row' },
+  total:        { icon: '💬', title: 'Total de Interações',      sub: 'Todos os registros do período',       Component: ContentTotal,        prop: 'rows' },
+  feedback:     { icon: '⭐', title: 'Satisfação do Cliente',    sub: 'Índice e feedbacks reais',            Component: ContentFeedback,     prop: 'rows' },
+  clientes:     { icon: '👤', title: 'Clientes Únicos',          sub: 'Agrupados por número de telefone',    Component: ContentClientes,     prop: 'rows' },
+  reservas:     { icon: '🍖', title: 'Solicitações de Reserva',  sub: 'Helena enviou link GetIn',            Component: ContentReservas,     prop: 'rows' },
+  fora:         { icon: '🕐', title: 'Fora do Horário',          sub: 'Atendimentos fora do expediente',     Component: ContentFora,         prop: 'rows' },
+  pico:         { icon: '🔥', title: 'Horário de Pico',          sub: 'Distribuição de volume por hora',     Component: ContentPico,         prop: 'rows' },
+  reclamacoes:  { icon: '⚠️', title: 'Reclamações',              sub: 'Detalhes das reclamações',            Component: ContentReclamacoes,  prop: 'rows' },
+  aniversarios: { icon: '🎂', title: 'Aniversários',             sub: 'Clientes aniversariantes',            Component: ContentAniversarios, prop: 'rows' },
+  tipo:         { icon: '🍽', title: 'Tipo de Atendimento',      sub: 'Detalhes por categoria',              Component: ContentTipo,         prop: 'rows' },
+  turno:        { icon: '🕐', title: 'Almoço/HH × Jantar',      sub: 'Distribuição por turno',              Component: ContentTurno,        prop: 'rows' },
+  registro:     { icon: '📋', title: 'Detalhes do Atendimento',  sub: 'Ficha completa',                     Component: ContentRegistro,     prop: 'row' },
 }
 
 function getSubtitle(type, data, meta) {

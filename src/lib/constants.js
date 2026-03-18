@@ -17,16 +17,17 @@ export const COLORS = {
 
 /* ── Cores do gráfico donut ── */
 export const DONUT_COLORS = {
-  Reservas: COLORS.primary,
-  Cardapio: COLORS.secondary,
-  Localizacao: COLORS.danger,
-  Geral: COLORS.muted,
-  Aniversario: COLORS.purple,
-  Reclamacao: COLORS.pink,
+  Reservas: COLORS.success,       // verde — reserva real (link GetIn)
+  Programacao: '#3B82F6',         // azul — consulta de programação
+  Cardapio: COLORS.secondary,     // laranja
+  Localizacao: COLORS.purple,     // roxo
+  Geral: '#6B7280',               // cinza
+  Aniversario: COLORS.pink,       // rosa
+  Reclamacao: COLORS.danger,      // vermelho
   Outros: '#4A3A1A',
 }
 
-export const DONUT_ORDER = ['Reservas', 'Cardapio', 'Localizacao', 'Geral', 'Aniversario', 'Reclamacao', 'Outros']
+export const DONUT_ORDER = ['Reservas', 'Programacao', 'Cardapio', 'Localizacao', 'Geral', 'Aniversario', 'Reclamacao', 'Outros']
 
 /* ── Dimensões do gráfico de linha SVG ── */
 export const LINE_CHART = {

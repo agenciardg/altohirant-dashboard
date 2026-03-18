@@ -8,6 +8,7 @@ const TIPO_NORM = {
   reserva: 'Reservas', reservas: 'Reservas',
   cardapio: 'Cardapio', menu: 'Cardapio',
   localizacao: 'Localizacao', endereco: 'Localizacao',
+  programacao: 'Programacao',
   geral: 'Geral',
   aniversario: 'Aniversario',
   reclamacao: 'Reclamacao',
