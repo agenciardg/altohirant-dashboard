@@ -226,9 +226,10 @@ function processData(rows, _prevRows, tab) {
   /* ── KPIs extras para aba HOJE ── */
   const hoje = isoDate(new Date())
 
-  // Reservas de hoje: registros com data_reserva_pedida = hoje
+  // Reservas de hoje: reserva_solicitada = true E data = hoje
+  // (reserva real = Helena enviou link GetIn)
   const reservasHoje = rows
-    .filter(r => r.data_reserva_pedida === hoje)
+    .filter(r => r.reserva_solicitada && r.data === hoje)
     .map(r => ({
       nome_cliente: r.nome_cliente,
       numero_cliente: r.numero_cliente,
