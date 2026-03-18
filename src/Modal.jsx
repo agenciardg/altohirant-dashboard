@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, useCallback } from 'react'
 import { normTipo, normFeedback, normTurno, isDiurno } from './lib/utils'
+import { TipoBadge, StBadge, TurnoBadge } from './components/Badges'
 import { DIAS_ABREV } from './lib/constants'
 
 /* ── Helpers ── */
@@ -10,55 +11,38 @@ function fmtData(data) {
   return `${d}/${m}/${y}`
 }
 
-/* ── Sub-badges ── */
-function FBadge({ fb }) {
-  const n = normFeedback(fb)
-  if (n == null) return <span className="mb-badge mb-neutro" style={{ opacity: 0.5 }}>— Sem feedback</span>
-  const cls = n === 'Positivo' ? 'mb-positivo' : n === 'Negativo' ? 'mb-negativo' : 'mb-neutro'
-  const ico = n === 'Positivo' ? '↑' : n === 'Negativo' ? '↓' : '→'
-  return <span className={`mb-badge ${cls}`}>{ico} {n}</span>
-}
-function TBadge({ tipo }) {
-  const cls = { Reservas: 'mb-res', Programacao: 'mb-prog', Cardapio: 'mb-car', Localizacao: 'mb-loc', Geral: 'mb-ger', Aniversario: 'mb-aniv', Reclamacao: 'mb-recl' }
-  return <span className={`mb-badge ${cls[tipo] || 'mb-out'}`}>{tipo}</span>
-}
-function TurnoBadge({ turno }) {
-  if (!turno) return null
-  const label = normTurno(turno)
-  return <span className={`mb-badge ${isDiurno(turno) ? 'mb-diurno' : 'mb-jantar'}`}>{label}</span>
-}
-
-/* ── Linha de registro ── */
-function MRow({ row }) {
+/* ── Tabela padrão para listagem de registros nos modais ── */
+function MTable({ rows, onClickRow }) {
+  if (!rows || rows.length === 0) return null
   return (
-    <div className="mrow">
-      <div className="mrow-hora">
-        <span className="mrow-h">{fmt(row.hora)}</span>
-        {row.data && <span className="mrow-d">{fmtData(row.data)}</span>}
-      </div>
-      <div className="mrow-info">
-        <div className="mrow-cli">{row.nome_cliente || row.numero_cliente || 'Desconhecido'}</div>
-        {row.numero_cliente && row.nome_cliente && (
-          <div className="mrow-tel">{row.numero_cliente}</div>
-        )}
-        {row.assunto_feedback && (
-          <div className="mrow-det">{row.assunto_feedback}</div>
-        )}
-      </div>
-      <div className="mrow-badges">
-        <TBadge tipo={normTipo(row.tipo_atendimento)} />
-        {row.turno && <TurnoBadge turno={row.turno} />}
-        <FBadge fb={row.feedback_empresa} />
-        {row.fora_horario && <span className="mb-badge mb-fora">Fora horário</span>}
-      </div>
+    <div className="tscr">
+      <table>
+        <thead>
+          <tr><th>ID</th><th>Hora</th><th>Cliente</th><th>Tipo</th><th>Turno</th><th>Feedback</th></tr>
+        </thead>
+        <tbody>
+          {rows.map((r, i) => (
+            <tr key={i}
+              style={{ cursor: onClickRow ? 'pointer' : undefined }}
+              onClick={() => onClickRow && onClickRow(r)}>
+              <td style={{ color: 'var(--t3)', fontSize: 11, fontFamily: 'monospace' }}>#{String(i + 1).padStart(3, '0')}</td>
+              <td style={{ fontFamily: "'Playfair Display',serif", fontWeight: 700, fontSize: 13 }}>{fmt(r.hora)}</td>
+              <td style={{ fontWeight: 600 }}>{r.nome_cliente || r.numero_cliente || 'Desconhecido'}</td>
+              <td><TipoBadge tipo={normTipo(r.tipo_atendimento)} /></td>
+              <td><TurnoBadge turno={normTurno(r.turno)} /></td>
+              <td><StBadge st={normFeedback(r.feedback_empresa)} /></td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
   )
 }
 
-/* ── Stat summary ── */
-function StatRow({ label, value, sub }) {
+/* ── Stat summary (agora clicável como filtro) ── */
+function StatRow({ label, value, sub, onClick, active }) {
   return (
-    <div className="mstat">
+    <div className={`mstat${active ? ' mstat--active' : ''}`} onClick={onClick || undefined}>
       <div className="mstat-val">{value}</div>
       <div className="mstat-lbl">{label}</div>
       {sub && <div className="mstat-sub">{sub}</div>}
@@ -68,6 +52,7 @@ function StatRow({ label, value, sub }) {
 
 /* ── Conteúdo: Total Atendimentos ── */
 function ContentTotal({ rows }) {
+  const [filter, setFilter] = useState(null)
   const total = rows.length
   const porTipo = {}
   rows.forEach(r => {
@@ -76,87 +61,90 @@ function ContentTotal({ rows }) {
   })
   const clientesUnicos = new Set(rows.map(r => r.numero_cliente).filter(Boolean)).size
   const foraH = rows.filter(r => r.fora_horario).length
+  const toggle = k => setFilter(f => f === k ? null : k)
+
+  const filtered = filter === 'fora' ? rows.filter(r => r.fora_horario)
+    : filter === 'clientes' ? rows
+    : filter ? rows.filter(r => normTipo(r.tipo_atendimento) === filter)
+    : rows
 
   return (
     <>
       <div className="mstats">
-        <StatRow value={total} label="Total" />
-        <StatRow value={clientesUnicos} label="Clientes únicos" />
-        <StatRow value={foraH} label="Fora horário" sub={total ? Math.round(foraH / total * 100) + '%' : '—'} />
+        <StatRow value={total} label="Total" active={!filter} onClick={() => setFilter(null)} />
+        <StatRow value={clientesUnicos} label="Clientes únicos" active={filter === 'clientes'} onClick={() => toggle('clientes')} />
+        <StatRow value={foraH} label="Fora horário" sub={total ? Math.round(foraH / total * 100) + '%' : '—'} active={filter === 'fora'} onClick={() => toggle('fora')} />
         {Object.entries(porTipo).map(([t, v]) => (
-          <StatRow key={t} value={v} label={t} sub={total ? Math.round(v / total * 100) + '%' : '—'} />
+          <StatRow key={t} value={v} label={t} sub={total ? Math.round(v / total * 100) + '%' : '—'} active={filter === t} onClick={() => toggle(t)} />
         ))}
       </div>
-      <div className="msec-title">Todos os atendimentos</div>
-      {rows.length === 0
-        ? <div className="mempty">Nenhum atendimento neste período</div>
-        : rows.map((r, i) => <MRow key={i} row={r} />)
-      }
+      <div className="modal-scroll">
+        <div className="msec-title">{filter && filter !== 'clientes' ? `Filtrado: ${filter === 'fora' ? 'Fora do horário' : filter}` : 'Todos os atendimentos'} ({filtered.length})</div>
+        {filtered.length === 0
+          ? <div className="mempty">Nenhum atendimento neste período</div>
+          : <MTable rows={filtered} />
+        }
+      </div>
     </>
   )
 }
 
 /* ── Conteúdo: Reservas ── */
 function ContentReservas({ rows }) {
+  const [filter, setFilter] = useState(null)
   const reservas = rows.filter(r => r.reserva_solicitada)
+  const semReserva = rows.filter(r => !r.reserva_solicitada)
+  const toggle = k => setFilter(f => f === k ? null : k)
+  const filtered = filter === 'reservas' ? reservas : filter === 'sem' ? semReserva : rows
+
   return (
     <>
       <div className="mstats">
-        <StatRow value={reservas.length} label="Reservas" />
-        <StatRow value={rows.length ? Math.round(reservas.length / rows.length * 100) + '%' : '—'} label="Taxa" sub="do total" />
+        <StatRow value={reservas.length} label="Reservas" active={filter === 'reservas'} onClick={() => toggle('reservas')} />
+        <StatRow value={rows.length ? Math.round(reservas.length / rows.length * 100) + '%' : '—'} label="Taxa" sub="do total" active={!filter} onClick={() => setFilter(null)} />
       </div>
-      <div className="msec-title">Clientes que solicitaram reserva</div>
-      {reservas.length === 0
-        ? <div className="mempty">Nenhuma reserva neste período</div>
-        : reservas.map((r, i) => (
-          <div className="mrow" key={i}>
-            <div className="mrow-hora">
-              <span className="mrow-h">{fmt(r.hora)}</span>
-              <span className="mrow-d">{fmtData(r.data)}</span>
-            </div>
-            <div className="mrow-info">
-              <div className="mrow-cli">{r.nome_cliente || r.numero_cliente || 'Desconhecido'}</div>
-              {r.numero_cliente && r.nome_cliente && <div className="mrow-tel">{r.numero_cliente}</div>}
-              {r.data_reserva_pedida && (
-                <div className="mrow-det">📅 Reserva para: <strong>{fmtData(r.data_reserva_pedida)}</strong></div>
-              )}
-              {r.assunto_feedback && <div className="mrow-det">{r.assunto_feedback}</div>}
-            </div>
-            <div className="mrow-badges">
-              <TurnoBadge turno={r.turno} />
-              <FBadge fb={r.feedback_empresa} />
-            </div>
-          </div>
-        ))
-      }
+      <div className="modal-scroll">
+        <div className="msec-title">{filter === 'reservas' ? 'Com reserva' : filter === 'sem' ? 'Sem reserva' : 'Todos'} ({filtered.length})</div>
+        {filtered.length === 0
+          ? <div className="mempty">Nenhuma reserva neste período</div>
+          : <MTable rows={filtered} />
+        }
+      </div>
     </>
   )
 }
 
 /* ── Conteúdo: Fora do Horário ── */
 function ContentFora({ rows }) {
+  const [filter, setFilter] = useState('fora')
   const fora = rows.filter(r => r.fora_horario)
+  const noHorario = rows.filter(r => !r.fora_horario)
   const total = rows.length || 1
   const pct = Math.round((fora.length / total) * 100)
+  const toggle = k => setFilter(f => f === k ? null : k)
+  const filtered = filter === 'fora' ? fora : filter === 'no' ? noHorario : rows
 
   return (
     <>
       <div className="mstats">
-        <StatRow value={fora.length} label="Fora do horário" sub={`${pct}% do total`} />
-        <StatRow value={rows.length - fora.length} label="No horário" />
-        <StatRow value={rows.length} label="Total" />
+        <StatRow value={fora.length} label="Fora do horário" sub={`${pct}% do total`} active={filter === 'fora'} onClick={() => toggle('fora')} />
+        <StatRow value={noHorario.length} label="No horário" active={filter === 'no'} onClick={() => toggle('no')} />
+        <StatRow value={rows.length} label="Total" active={!filter} onClick={() => setFilter(null)} />
       </div>
-      <div className="msec-title">Atendimentos fora do horário</div>
-      {fora.length === 0
-        ? <div className="mempty">Nenhum atendimento fora do horário</div>
-        : fora.map((r, i) => <MRow key={i} row={r} />)
-      }
+      <div className="modal-scroll">
+        <div className="msec-title">{filter === 'fora' ? 'Fora do horário' : filter === 'no' ? 'No horário' : 'Todos'} ({filtered.length})</div>
+        {filtered.length === 0
+          ? <div className="mempty">Nenhum atendimento nesta categoria</div>
+          : <MTable rows={filtered} />
+        }
+      </div>
     </>
   )
 }
 
 /* ── Conteúdo: Horário de Pico ── */
 function ContentPico({ rows }) {
+  const [filter, setFilter] = useState(null)
   const counts = {}
   rows.forEach(r => {
     const h = parseInt((r.hora || '00').split(':')[0])
@@ -169,76 +157,99 @@ function ContentPico({ rows }) {
   const turnoCounts = {}
   rows.forEach(r => { if (r.turno) { const t = normTurno(r.turno); turnoCounts[t] = (turnoCounts[t] || 0) + 1 } })
   const turnoSorted = Object.entries(turnoCounts).sort((a, b) => b[1] - a[1])
+  const toggle = k => setFilter(f => f === k ? null : k)
+
+  const filtered = filter === 'pico' && picoH ? rows.filter(r => parseInt((r.hora || '00').split(':')[0]) === Number(picoH[0]))
+    : filter ? rows.filter(r => normTurno(r.turno) === filter)
+    : rows
 
   return (
     <>
       <div className="mstats">
-        {picoH && <StatRow value={`${parseInt(picoH[0])}h`} label="Pico máximo" sub={`${picoH[1]} atend.`} />}
-        {turnoSorted[0] && <StatRow value={turnoSorted[0][0]} label="Turno pico" sub={`${turnoSorted[0][1]} atend.`} />}
-        <StatRow value={rows.length} label="Total" />
+        {picoH && <StatRow value={`${parseInt(picoH[0])}h`} label="Pico máximo" sub={`${picoH[1]} atend.`} active={filter === 'pico'} onClick={() => toggle('pico')} />}
+        {turnoSorted[0] && <StatRow value={turnoSorted[0][0]} label="Turno pico" sub={`${turnoSorted[0][1]} atend.`} active={filter === turnoSorted[0][0]} onClick={() => toggle(turnoSorted[0][0])} />}
+        <StatRow value={rows.length} label="Total" active={!filter} onClick={() => setFilter(null)} />
       </div>
 
-      <div className="msec-title">Volume por hora</div>
-      <div className="mpico-chart">
-        {sorted.length === 0
-          ? <div className="mempty">Sem dados para exibir</div>
-          : sorted.map(([h, v]) => {
-            const isPico = picoH && Number(h) === Number(picoH[0])
-            return (
-              <div key={h} className="mpico-row">
-                <div className="mpico-lbl">{parseInt(h)}h</div>
-                <div className="mpico-bar-wrap">
-                  <div
-                    className={`mpico-bar ${isPico ? 'mpico-bar-peak' : ''}`}
-                    style={{ width: Math.round((v / maxVal) * 100) + '%' }}
-                  />
+      <div className="modal-scroll">
+        <div className="msec-title">Volume por hora</div>
+        <div className="mpico-chart">
+          {sorted.length === 0
+            ? <div className="mempty">Sem dados para exibir</div>
+            : sorted.map(([h, v]) => {
+              const isPico = picoH && Number(h) === Number(picoH[0])
+              return (
+                <div key={h} className="mpico-row">
+                  <div className="mpico-lbl">{parseInt(h)}h</div>
+                  <div className="mpico-bar-wrap">
+                    <div
+                      className={`mpico-bar ${isPico ? 'mpico-bar-peak' : ''}`}
+                      style={{ width: Math.round((v / maxVal) * 100) + '%' }}
+                    />
+                  </div>
+                  <div className="mpico-val">{v}</div>
                 </div>
-                <div className="mpico-val">{v}</div>
-              </div>
-            )
-          })
-        }
-      </div>
+              )
+            })
+          }
+        </div>
 
-      {turnoSorted.length > 0 && (
-        <>
-          <div className="msec-title" style={{ marginTop: 24 }}>Por turno</div>
-          <div className="mpico-chart">
-            {turnoSorted.map(([t, v]) => (
-              <div key={t} className="mpico-row">
-                <div className="mpico-lbl" style={{ textTransform: 'capitalize' }}>{t}</div>
-                <div className="mpico-bar-wrap">
-                  <div className="mpico-bar" style={{ width: Math.round((v / rows.length) * 100) + '%', background: '#E85D04' }} />
+        {turnoSorted.length > 0 && (
+          <>
+            <div className="msec-title" style={{ marginTop: 24 }}>Por turno</div>
+            <div className="mpico-chart">
+              {turnoSorted.map(([t, v]) => (
+                <div key={t} className="mpico-row">
+                  <div className="mpico-lbl" style={{ textTransform: 'capitalize' }}>{t}</div>
+                  <div className="mpico-bar-wrap">
+                    <div className="mpico-bar" style={{ width: Math.round((v / rows.length) * 100) + '%', background: '#E85D04' }} />
+                  </div>
+                  <div className="mpico-val">{v}</div>
                 </div>
-                <div className="mpico-val">{v}</div>
-              </div>
-            ))}
-          </div>
-        </>
-      )}
+              ))}
+            </div>
+          </>
+        )}
+
+        {filter && (
+          <>
+            <div className="msec-title" style={{ marginTop: 24 }}>Registros filtrados ({filtered.length})</div>
+            {filtered.length === 0
+              ? <div className="mempty">Nenhum registro</div>
+              : <MTable rows={filtered} />
+            }
+          </>
+        )}
+      </div>
     </>
   )
 }
 
 /* ── Conteúdo: Feedbacks / Satisfação ── */
 function ContentFeedback({ rows }) {
-  // v2: feedback_empresa NULL = sem feedback (ignorar no cálculo de satisfação)
-  const comFeedback = rows.filter(r => r.feedback_empresa != null)
+  const [filter, setFilter] = useState(null)
+  const comFeedback = rows.filter(r => r.feedback_empresa != null && r.feedback_empresa !== '')
   const positivos = comFeedback.filter(r => normFeedback(r.feedback_empresa) === 'Positivo')
   const negativos = comFeedback.filter(r => normFeedback(r.feedback_empresa) === 'Negativo')
   const neutros = comFeedback.filter(r => normFeedback(r.feedback_empresa) === 'Neutro')
-  const sem = rows.filter(r => !r.feedback_empresa)
+  const sem = rows.filter(r => !r.feedback_empresa || r.feedback_empresa === '')
   const total = rows.length || 1
 
-  // Índice de satisfação: (positivo / (positivo + negativo)) * 100 — apenas feedback real
   const satisfacao = (positivos.length + negativos.length) > 0
     ? Math.round((positivos.length / (positivos.length + negativos.length)) * 100)
     : null
   const taxaFeedback = Math.round((comFeedback.length / total) * 100)
+  const toggle = k => setFilter(f => f === k ? null : k)
 
-  // Assuntos de feedback agrupados
+  const filtered = filter === 'pos' ? positivos
+    : filter === 'neg' ? negativos
+    : filter === 'neutro' ? neutros
+    : filter === 'sem' ? sem
+    : comFeedback
+
   const assuntos = {}
-  comFeedback.forEach(r => {
+  const assuntoSource = filter ? filtered : comFeedback
+  assuntoSource.filter(r => r.feedback_empresa != null).forEach(r => {
     const a = r.assunto_feedback || 'outro'
     assuntos[a] = (assuntos[a] || 0) + 1
   })
@@ -247,58 +258,44 @@ function ContentFeedback({ rows }) {
   return (
     <>
       <div className="mstats">
-        {satisfacao != null && <StatRow value={`${satisfacao}%`} label="Índice de Satisfação" sub="positivo / (pos + neg)" />}
-        <StatRow value={`${taxaFeedback}%`} label="Taxa de Feedback" sub={`${comFeedback.length} de ${total}`} />
-        <StatRow value={positivos.length} label="Positivos" sub={comFeedback.length ? Math.round(positivos.length / comFeedback.length * 100) + '%' : '—'} />
-        <StatRow value={negativos.length} label="Negativos" sub={comFeedback.length ? Math.round(negativos.length / comFeedback.length * 100) + '%' : '—'} />
-        <StatRow value={sem.length} label="Sem feedback" sub={Math.round(sem.length / total * 100) + '%'} />
+        {satisfacao != null && <StatRow value={`${satisfacao}%`} label="Satisfação" sub="pos / (pos+neg)" active={!filter} onClick={() => setFilter(null)} />}
+        <StatRow value={positivos.length} label="Positivos" sub={comFeedback.length ? Math.round(positivos.length / comFeedback.length * 100) + '%' : '—'} active={filter === 'pos'} onClick={() => toggle('pos')} />
+        <StatRow value={negativos.length} label="Negativos" sub={comFeedback.length ? Math.round(negativos.length / comFeedback.length * 100) + '%' : '—'} active={filter === 'neg'} onClick={() => toggle('neg')} />
+        <StatRow value={neutros.length} label="Neutros" active={filter === 'neutro'} onClick={() => toggle('neutro')} />
+        <StatRow value={sem.length} label="Sem feedback" sub={Math.round(sem.length / total * 100) + '%'} active={filter === 'sem'} onClick={() => toggle('sem')} />
       </div>
 
-      {assuntosSorted.length > 0 && (
-        <>
-          <div className="msec-title">Assuntos de feedback</div>
-          <div className="mpico-chart">
-            {assuntosSorted.map(([a, v]) => (
-              <div key={a} className="mpico-row">
-                <div className="mpico-lbl" style={{ textTransform: 'capitalize' }}>{a}</div>
-                <div className="mpico-bar-wrap">
-                  <div className="mpico-bar" style={{ width: Math.round((v / comFeedback.length) * 100) + '%', background: '#F97316' }} />
+      <div className="modal-scroll">
+        {assuntosSorted.length > 0 && (
+          <>
+            <div className="msec-title">Assuntos de feedback</div>
+            <div className="mpico-chart" style={{ marginBottom: 20 }}>
+              {assuntosSorted.map(([a, v]) => (
+                <div key={a} className="mpico-row">
+                  <div className="mpico-lbl" style={{ textTransform: 'capitalize' }}>{a}</div>
+                  <div className="mpico-bar-wrap">
+                    <div className="mpico-bar" style={{ width: Math.round((v / (assuntoSource.length || 1)) * 100) + '%', background: '#F97316' }} />
+                  </div>
+                  <div className="mpico-val">{v}</div>
                 </div>
-                <div className="mpico-val">{v}</div>
-              </div>
-            ))}
-          </div>
-        </>
-      )}
+              ))}
+            </div>
+          </>
+        )}
 
-      {positivos.length > 0 && (
-        <>
-          <div className="msec-title">Feedbacks positivos</div>
-          {positivos.map((r, i) => <MRow key={'p' + i} row={r} />)}
-        </>
-      )}
-      {negativos.length > 0 && (
-        <>
-          <div className="msec-title">Feedbacks negativos</div>
-          {negativos.slice(0, 10).map((r, i) => <MRow key={'n' + i} row={r} />)}
-          {negativos.length > 10 && <div className="mempty">...e mais {negativos.length - 10} negativos</div>}
-        </>
-      )}
-      {neutros.length > 0 && (
-        <>
-          <div className="msec-title">Feedbacks neutros</div>
-          {neutros.map((r, i) => <MRow key={'u' + i} row={r} />)}
-        </>
-      )}
-      {comFeedback.length === 0 && (
-        <div className="mempty">Nenhum feedback registrado neste período</div>
-      )}
+        <div className="msec-title">{filter === 'pos' ? 'Positivos' : filter === 'neg' ? 'Negativos' : filter === 'neutro' ? 'Neutros' : filter === 'sem' ? 'Sem feedback' : 'Todos com feedback'} ({filtered.length})</div>
+        {filtered.length === 0
+          ? <div className="mempty">Nenhum registro nesta categoria</div>
+          : <MTable rows={filtered} />
+        }
+      </div>
     </>
   )
 }
 
 /* ── Conteúdo: Clientes Únicos ── */
 function ContentClientes({ rows }) {
+  const [filter, setFilter] = useState(null)
   const grouped = {}
   rows.forEach(r => {
     const key = r.numero_cliente || 'desconhecido'
@@ -308,45 +305,64 @@ function ContentClientes({ rows }) {
   })
   const clientes = Object.values(grouped).sort((a, b) => b.atendimentos.length - a.atendimentos.length)
   const total = rows.length
+  const recorrentes = clientes.filter(c => c.atendimentos.length > 1)
+  const unicos = clientes.filter(c => c.atendimentos.length === 1)
+  const toggle = k => setFilter(f => f === k ? null : k)
+
+  const filtered = filter === 'recorrentes' ? recorrentes : filter === 'unicos' ? unicos : clientes
 
   return (
     <>
       <div className="mstats">
-        <StatRow value={clientes.length} label="Clientes únicos" />
+        <StatRow value={clientes.length} label="Clientes únicos" active={!filter} onClick={() => setFilter(null)} />
+        <StatRow value={recorrentes.length} label="Recorrentes" sub={`${clientes.length ? Math.round(recorrentes.length / clientes.length * 100) : 0}%`} active={filter === 'recorrentes'} onClick={() => toggle('recorrentes')} />
         <StatRow value={total} label="Atendimentos" />
         <StatRow value={total && clientes.length ? (total / clientes.length).toFixed(1) : '—'} label="Média / cliente" />
       </div>
-      <div className="msec-title">Clientes por volume de interações</div>
-      {clientes.length === 0
-        ? <div className="mempty">Nenhum cliente neste período</div>
-        : clientes.map((c, i) => (
-          <div className="mrow" key={i}>
-            <div className="mrow-hora">
-              <span className="mrow-h" style={{ fontSize: '1.1rem' }}>{c.atendimentos.length}×</span>
+      <div className="modal-scroll">
+        <div className="msec-title">{filter === 'recorrentes' ? 'Clientes recorrentes' : filter === 'unicos' ? 'Clientes com 1 atendimento' : 'Todos os clientes'} ({filtered.length})</div>
+        {filtered.length === 0
+          ? <div className="mempty">Nenhum cliente neste período</div>
+          : <div className="tscr">
+              <table>
+                <thead>
+                  <tr><th>Qtd</th><th>Cliente</th><th>Tipos</th><th>Tags</th></tr>
+                </thead>
+                <tbody>
+                  {filtered.map((c, i) => (
+                    <tr key={i}>
+                      <td style={{ fontFamily: "'Playfair Display',serif", fontWeight: 700, fontSize: 14, textAlign: 'center' }}>{c.atendimentos.length}×</td>
+                      <td style={{ fontWeight: 600 }}>
+                        {c.nome}
+                        {c.nome !== c.numero && <div style={{ fontSize: 10, color: 'var(--t3)', fontWeight: 400 }}>{c.numero}</div>}
+                      </td>
+                      <td style={{ fontSize: 11 }}>{[...new Set(c.atendimentos.map(r => normTipo(r.tipo_atendimento)))].join(', ')}</td>
+                      <td>
+                        <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+                          {c.atendimentos.some(r => r.reserva_solicitada) && <TipoBadge tipo="Reservas" />}
+                          {c.atendimentos.some(r => r.eh_aniversario) && <span className="b baniv">Niver</span>}
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
-            <div className="mrow-info">
-              <div className="mrow-cli">{c.nome}</div>
-              {c.nome !== c.numero && <div className="mrow-tel">{c.numero}</div>}
-              <div className="mrow-det">
-                {[...new Set(c.atendimentos.map(r => normTipo(r.tipo_atendimento)))].join(', ')}
-              </div>
-            </div>
-            <div className="mrow-badges">
-              {c.atendimentos.some(r => r.reserva_solicitada) && <span className="mb-badge mb-res">Reserva</span>}
-              {c.atendimentos.some(r => r.eh_aniversario) && <span className="mb-badge mb-aniv">🎂 Niver</span>}
-            </div>
-          </div>
-        ))
-      }
+        }
+      </div>
     </>
   )
 }
 
 /* ── Conteúdo: Reclamações ── */
 function ContentReclamacoes({ rows }) {
+  const [filter, setFilter] = useState('recl')
   const reclamacoes = rows.filter(r => normTipo(r.tipo_atendimento) === 'Reclamacao')
+  const outros = rows.filter(r => normTipo(r.tipo_atendimento) !== 'Reclamacao')
   const total = rows.length || 1
   const pct = Math.round((reclamacoes.length / total) * 100)
+  const toggle = k => setFilter(f => f === k ? null : k)
+  const filtered = filter === 'recl' ? reclamacoes : filter === 'outros' ? outros : rows
 
   const assuntos = {}
   reclamacoes.forEach(r => {
@@ -358,82 +374,75 @@ function ContentReclamacoes({ rows }) {
   return (
     <>
       <div className="mstats">
-        <StatRow value={reclamacoes.length} label="Reclamações" sub={`${pct}% do total`} />
-        <StatRow value={rows.length} label="Total interações" />
+        <StatRow value={reclamacoes.length} label="Reclamações" sub={`${pct}% do total`} active={filter === 'recl'} onClick={() => toggle('recl')} />
+        <StatRow value={rows.length} label="Total interações" active={!filter} onClick={() => setFilter(null)} />
       </div>
-      {assuntosSorted.length > 0 && (
-        <>
-          <div className="msec-title">Assuntos das reclamações</div>
-          <div className="mpico-chart">
-            {assuntosSorted.map(([a, v]) => (
-              <div key={a} className="mpico-row">
-                <div className="mpico-lbl" style={{ textTransform: 'capitalize' }}>{a}</div>
-                <div className="mpico-bar-wrap">
-                  <div className="mpico-bar" style={{ width: Math.round((v / reclamacoes.length) * 100) + '%', background: '#DC2626' }} />
+      <div className="modal-scroll">
+        {assuntosSorted.length > 0 && (
+          <>
+            <div className="msec-title">Assuntos das reclamações</div>
+            <div className="mpico-chart" style={{ marginBottom: 20 }}>
+              {assuntosSorted.map(([a, v]) => (
+                <div key={a} className="mpico-row">
+                  <div className="mpico-lbl" style={{ textTransform: 'capitalize' }}>{a}</div>
+                  <div className="mpico-bar-wrap">
+                    <div className="mpico-bar" style={{ width: Math.round((v / reclamacoes.length) * 100) + '%', background: '#DC2626' }} />
+                  </div>
+                  <div className="mpico-val">{v}</div>
                 </div>
-                <div className="mpico-val">{v}</div>
-              </div>
-            ))}
-          </div>
-        </>
-      )}
-      <div className="msec-title">Todas as reclamações</div>
-      {reclamacoes.length === 0
-        ? <div className="mempty">Nenhuma reclamação neste período</div>
-        : reclamacoes.map((r, i) => <MRow key={i} row={r} />)
-      }
+              ))}
+            </div>
+          </>
+        )}
+        <div className="msec-title">{filter === 'recl' ? 'Reclamações' : 'Todos'} ({filtered.length})</div>
+        {filtered.length === 0
+          ? <div className="mempty">Nenhuma reclamação neste período</div>
+          : <MTable rows={filtered} />
+        }
+      </div>
     </>
   )
 }
 
 /* ── Conteúdo: Aniversários ── */
 function ContentAniversarios({ rows }) {
+  const [filter, setFilter] = useState('aniv')
   const aniversarios = rows.filter(r => r.eh_aniversario)
+  const naoAniv = rows.filter(r => !r.eh_aniversario)
   const clientesUnicos = new Set(aniversarios.map(r => r.numero_cliente).filter(Boolean)).size
   const mediaGrupo = aniversarios.filter(r => r.qtd_pessoas).length > 0
     ? (aniversarios.filter(r => r.qtd_pessoas).reduce((s, r) => s + r.qtd_pessoas, 0) / aniversarios.filter(r => r.qtd_pessoas).length).toFixed(1)
     : '—'
+  const toggle = k => setFilter(f => f === k ? null : k)
+  const filtered = filter === 'aniv' ? aniversarios : rows
 
   return (
     <>
       <div className="mstats">
-        <StatRow value={clientesUnicos} label="Clientes aniversariantes" />
-        <StatRow value={aniversarios.length} label="Interações" />
+        <StatRow value={clientesUnicos} label="Aniversariantes" active={filter === 'aniv'} onClick={() => toggle('aniv')} />
+        <StatRow value={aniversarios.length} label="Interações" active={!filter} onClick={() => setFilter(null)} />
         <StatRow value={mediaGrupo} label="Média pessoas/grupo" />
       </div>
-      <div className="msec-title">Aniversariantes</div>
-      {aniversarios.length === 0
-        ? <div className="mempty">Nenhum aniversário neste período</div>
-        : aniversarios.map((r, i) => (
-          <div className="mrow" key={i}>
-            <div className="mrow-hora">
-              <span className="mrow-h">{fmt(r.hora)}</span>
-              <span className="mrow-d">{fmtData(r.data)}</span>
-            </div>
-            <div className="mrow-info">
-              <div className="mrow-cli">{r.nome_cliente || r.numero_cliente || 'Desconhecido'}</div>
-              {r.qtd_pessoas && <div className="mrow-det">{r.qtd_pessoas} pessoas</div>}
-              {r.data_reserva_pedida && <div className="mrow-det">Reserva: {fmtData(r.data_reserva_pedida)}</div>}
-            </div>
-            <div className="mrow-badges">
-              <span className="mb-badge mb-aniv">Aniversário</span>
-              {r.reserva_solicitada && <span className="mb-badge mb-res">Reserva</span>}
-            </div>
-          </div>
-        ))
-      }
+      <div className="modal-scroll">
+        <div className="msec-title">{filter === 'aniv' ? 'Aniversariantes' : 'Todos'} ({filtered.length})</div>
+        {filtered.length === 0
+          ? <div className="mempty">Nenhum aniversário neste período</div>
+          : <MTable rows={filtered} />
+        }
+      </div>
     </>
   )
 }
 
 /* ── Conteúdo: Interesse por Programação ── */
 function ContentProgramacao({ rows }) {
-  // Registros de tipo programacao (o que o KPI conta)
+  const [filter, setFilter] = useState('prog')
   const progRows = rows.filter(r => normTipo(r.tipo_atendimento) === 'Programacao')
   const total = rows.length || 1
   const pct = Math.round((progRows.length / total) * 100)
+  const toggle = k => setFilter(f => f === k ? null : k)
+  const filtered = filter === 'prog' ? progRows : rows
 
-  // Ranking de dia_programacao_interesse (quando preenchido)
   const counts = {}
   rows.forEach(r => {
     if (r.dia_programacao_interesse) {
@@ -447,47 +456,50 @@ function ContentProgramacao({ rows }) {
   return (
     <>
       <div className="mstats">
-        <StatRow value={progRows.length} label="Consultas de programação" sub={`${pct}% do total`} />
-        <StatRow value={rows.length} label="Total interações" />
+        <StatRow value={progRows.length} label="Programação" sub={`${pct}% do total`} active={filter === 'prog'} onClick={() => toggle('prog')} />
+        <StatRow value={rows.length} label="Total interações" active={!filter} onClick={() => setFilter(null)} />
       </div>
 
-      {ranking.length > 0 && (
-        <>
-          <div className="msec-title">Ranking — Dias mais perguntados</div>
-          <div className="mpico-chart">
-            {ranking.map(([dia, v], i) => (
-              <div key={dia} className="mpico-row">
-                <div className="mpico-lbl" style={{ textTransform: 'capitalize' }}>{diasLabel[dia] || dia}</div>
-                <div className="mpico-bar-wrap">
-                  <div
-                    className={`mpico-bar ${i === 0 ? 'mpico-bar-peak' : ''}`}
-                    style={{ width: Math.round((v / maxVal) * 100) + '%', background: i === 0 ? '#F59E0B' : '#3B82F6' }}
-                  />
+      <div className="modal-scroll">
+        {ranking.length > 0 && (
+          <>
+            <div className="msec-title">Ranking — Dias mais perguntados</div>
+            <div className="mpico-chart" style={{ marginBottom: 20 }}>
+              {ranking.map(([dia, v], i) => (
+                <div key={dia} className="mpico-row">
+                  <div className="mpico-lbl" style={{ textTransform: 'capitalize' }}>{diasLabel[dia] || dia}</div>
+                  <div className="mpico-bar-wrap">
+                    <div
+                      className={`mpico-bar ${i === 0 ? 'mpico-bar-peak' : ''}`}
+                      style={{ width: Math.round((v / maxVal) * 100) + '%', background: i === 0 ? '#F59E0B' : '#3B82F6' }}
+                    />
+                  </div>
+                  <div className="mpico-val">{v} <span style={{ fontSize: 9, color: 'var(--t3)' }}>({Math.round(v / (progRows.length || 1) * 100)}%)</span></div>
                 </div>
-                <div className="mpico-val">{v} <span style={{ fontSize: 9, color: 'var(--t3)' }}>({Math.round(v / progRows.length * 100)}%)</span></div>
-              </div>
-            ))}
-          </div>
-        </>
-      )}
+              ))}
+            </div>
+          </>
+        )}
 
-      <div className="msec-title">Atendimentos — Programação</div>
-      {progRows.length === 0
-        ? <div className="mempty">Nenhuma consulta de programação neste período</div>
-        : progRows.map((r, i) => <MRow key={i} row={r} />)
-      }
+        <div className="msec-title">{filter === 'prog' ? 'Programação' : 'Todos'} ({filtered.length})</div>
+        {filtered.length === 0
+          ? <div className="mempty">Nenhuma consulta de programação neste período</div>
+          : <MTable rows={filtered} />
+        }
+      </div>
     </>
   )
 }
 
 /* ── Conteúdo: Fidelização de Clientes ── */
 function ContentFidelizacao({ rows }) {
+  const [filter, setFilter] = useState(null)
   const novos = rows.filter(r => !r.cliente_retornante)
   const retornantes = rows.filter(r => !!r.cliente_retornante)
   const total = rows.length || 1
   const taxa = Math.round((retornantes.length / total) * 100)
+  const toggle = k => setFilter(f => f === k ? null : k)
 
-  // Agrupar por cliente para tabela de frequentes
   const clientMap = {}
   rows.forEach(r => {
     const key = r.numero_cliente || 'desconhecido'
@@ -503,107 +515,107 @@ function ContentFidelizacao({ rows }) {
     .sort((a, b) => b.diasContato - a.diasContato || b.count - a.count)
     .slice(0, 10)
 
-  const corRet = taxa >= 30 ? '#22C55E' : taxa >= 15 ? '#F59E0B' : '#EF4444'
-  const labelTaxa = taxa >= 30 ? 'Boa retenção' : taxa >= 15 ? 'Retenção moderada' : 'Retenção baixa'
+  const labelTaxa = taxa >= 30 ? 'Boa retencao' : taxa >= 15 ? 'Retencao moderada' : 'Retencao baixa'
+  const filtered = filter === 'novos' ? novos : filter === 'retornantes' ? retornantes : rows
 
   return (
     <>
       <div className="mstats">
-        <StatRow value={novos.length} label="Clientes Novos" sub={`${Math.round((novos.length / total) * 100)}%`} />
-        <StatRow value={retornantes.length} label="Retornantes" sub={`${Math.round((retornantes.length / total) * 100)}%`} />
-        <StatRow value={`${taxa}%`} label="Taxa de Retorno" sub={labelTaxa} />
-        <StatRow value={total} label="Total registros" />
+        <StatRow value={novos.length} label="Novos" sub={`${Math.round((novos.length / total) * 100)}%`} active={filter === 'novos'} onClick={() => toggle('novos')} />
+        <StatRow value={retornantes.length} label="Retornantes" sub={`${Math.round((retornantes.length / total) * 100)}%`} active={filter === 'retornantes'} onClick={() => toggle('retornantes')} />
+        <StatRow value={`${taxa}%`} label="Taxa Retorno" sub={labelTaxa} active={!filter} onClick={() => setFilter(null)} />
+        <StatRow value={total} label="Total" active={!filter} onClick={() => setFilter(null)} />
       </div>
 
-      {frequentes.length > 0 && (
-        <>
-          <div className="msec-title">Clientes mais frequentes (multi-dia)</div>
-          {frequentes.map((c, i) => (
-            <div className="mrow" key={i}>
-              <div className="mrow-hora">
-                <span className="mrow-h" style={{ fontSize: '1.1rem' }}>{c.diasContato}d</span>
-                <span className="mrow-d" style={{ fontSize: 9 }}>{c.count} msgs</span>
-              </div>
-              <div className="mrow-info">
-                <div className="mrow-cli">{c.nome}</div>
-                {c.nome !== c.numero && <div className="mrow-tel">{c.numero}</div>}
-              </div>
-              <div className="mrow-badges">
-                <span className={`mb-badge ${c.retornante ? 'mb-res' : 'mb-prog'}`}>
-                  {c.retornante ? '🔁 Retornante' : '🆕 Novo'}
-                </span>
-              </div>
+      <div className="modal-scroll">
+        {!filter && frequentes.length > 0 && (
+          <>
+            <div className="msec-title">Clientes mais frequentes (multi-dia)</div>
+            <div className="tscr">
+              <table>
+                <thead>
+                  <tr><th>Dias</th><th>Msgs</th><th>Cliente</th><th>Status</th></tr>
+                </thead>
+                <tbody>
+                  {frequentes.map((c, i) => (
+                    <tr key={i}>
+                      <td style={{ fontFamily: "'Playfair Display',serif", fontWeight: 700, fontSize: 14, textAlign: 'center' }}>{c.diasContato}</td>
+                      <td style={{ textAlign: 'center' }}>{c.count}</td>
+                      <td style={{ fontWeight: 600 }}>
+                        {c.nome}
+                        {c.nome !== c.numero && <div style={{ fontSize: 10, color: 'var(--t3)', fontWeight: 400 }}>{c.numero}</div>}
+                      </td>
+                      <td><span className={`b ${c.retornante ? 'bp' : 'bprog'}`}>{c.retornante ? 'Retornante' : 'Novo'}</span></td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
-          ))}
-        </>
-      )}
+          </>
+        )}
 
-      <div className="msec-title">Clientes retornantes</div>
-      {retornantes.length === 0
-        ? <div className="mempty">Nenhum cliente retornante neste período</div>
-        : retornantes.map((r, i) => <MRow key={'r' + i} row={r} />)
-      }
-
-      {novos.length > 0 && (
-        <>
-          <div className="msec-title">Clientes novos</div>
-          {novos.slice(0, 20).map((r, i) => <MRow key={'n' + i} row={r} />)}
-          {novos.length > 20 && <div className="mempty">...e mais {novos.length - 20} novos</div>}
-        </>
-      )}
+        <div className="msec-title">{filter === 'novos' ? 'Clientes novos' : filter === 'retornantes' ? 'Clientes retornantes' : 'Todos os registros'} ({filtered.length})</div>
+        {filtered.length === 0
+          ? <div className="mempty">Nenhum registro nesta categoria</div>
+          : <MTable rows={filtered} />
+        }
+      </div>
     </>
   )
 }
 
 /* ── Conteúdo: Tipo de Atendimento ── */
 function ContentTipo({ rows, tipo }) {
-  const filtered = tipo === 'Sem dados' ? rows : rows.filter(r => normTipo(r.tipo_atendimento) === tipo)
+  const [filter, setFilter] = useState('tipo')
+  const tipoRows = tipo === 'Sem dados' ? rows : rows.filter(r => normTipo(r.tipo_atendimento) === tipo)
+  const outros = rows.filter(r => normTipo(r.tipo_atendimento) !== tipo)
+  const toggle = k => setFilter(f => f === k ? null : k)
+  const filtered = filter === 'tipo' ? tipoRows : rows
 
   return (
     <>
       <div className="mstats">
-        <StatRow value={filtered.length} label="Atendimentos" />
-        <StatRow value={rows.length ? Math.round(filtered.length / rows.length * 100) + '%' : '—'} label="Do total" />
+        <StatRow value={tipoRows.length} label={tipo} active={filter === 'tipo'} onClick={() => toggle('tipo')} />
+        <StatRow value={rows.length ? Math.round(tipoRows.length / rows.length * 100) + '%' : '—'} label="Do total" active={!filter} onClick={() => setFilter(null)} />
       </div>
-      <div className="msec-title">Atendimentos — {tipo}</div>
-      {filtered.length === 0
-        ? <div className="mempty">Nenhum atendimento deste tipo no período</div>
-        : filtered.map((r, i) => <MRow key={i} row={r} />)
-      }
+      <div className="modal-scroll">
+        <div className="msec-title">{filter === 'tipo' ? tipo : 'Todos'} ({filtered.length})</div>
+        {filtered.length === 0
+          ? <div className="mempty">Nenhum atendimento deste tipo no período</div>
+          : <MTable rows={filtered} />
+        }
+      </div>
     </>
   )
 }
 
 /* ── Conteúdo: Turno (Dia/Tarde x Noite por dia) ── */
 function ContentTurno({ rows, dia }) {
-  const filtered = dia ? rows.filter(r => {
+  const [filter, setFilter] = useState(null)
+  const allFiltered = dia ? rows.filter(r => {
     const diaRow = DIAS_ABREV[new Date(r.data + 'T12:00:00').getDay()]
     return diaRow === dia
   }) : rows
 
-  const diaTarde = filtered.filter(r => isDiurno(r.turno))
-  const noite = filtered.filter(r => !isDiurno(r.turno))
+  const diaTarde = allFiltered.filter(r => isDiurno(r.turno))
+  const noite = allFiltered.filter(r => !isDiurno(r.turno))
+  const toggle = k => setFilter(f => f === k ? null : k)
+  const filtered = filter === 'almoco' ? diaTarde : filter === 'jantar' ? noite : allFiltered
 
   return (
     <>
       <div className="mstats">
-        <StatRow value={diaTarde.length} label="Almoço / HH" sub={dia || 'período'} />
-        <StatRow value={noite.length} label="Jantar" sub={dia || 'período'} />
-        <StatRow value={filtered.length} label="Total" />
+        <StatRow value={diaTarde.length} label="Almoco / HH" sub={dia || 'periodo'} active={filter === 'almoco'} onClick={() => toggle('almoco')} />
+        <StatRow value={noite.length} label="Jantar" sub={dia || 'periodo'} active={filter === 'jantar'} onClick={() => toggle('jantar')} />
+        <StatRow value={allFiltered.length} label="Total" active={!filter} onClick={() => setFilter(null)} />
       </div>
-      {diaTarde.length > 0 && (
-        <>
-          <div className="msec-title">☀️ Almoço / Happy Hour</div>
-          {diaTarde.map((r, i) => <MRow key={i} row={r} />)}
-        </>
-      )}
-      {noite.length > 0 && (
-        <>
-          <div className="msec-title">🌙 Jantar</div>
-          {noite.map((r, i) => <MRow key={i} row={r} />)}
-        </>
-      )}
-      {filtered.length === 0 && <div className="mempty">Nenhum atendimento{dia ? ` em ${dia}` : ''}</div>}
+      <div className="modal-scroll">
+        <div className="msec-title">{filter === 'almoco' ? 'Almoco / Happy Hour' : filter === 'jantar' ? 'Jantar' : 'Todos os turnos'} ({filtered.length})</div>
+        {filtered.length === 0
+          ? <div className="mempty">Nenhum atendimento{dia ? ` em ${dia}` : ''}</div>
+          : <MTable rows={filtered} />
+        }
+      </div>
     </>
   )
 }
@@ -612,7 +624,7 @@ function ContentTurno({ rows, dia }) {
 function ContentRegistro({ row }) {
   if (!row) return <div className="mempty">Sem dados</div>
   return (
-    <div className="mreg">
+    <div className="mreg modal-scroll">
       <div className="mreg-grid">
         <div className="mreg-field">
           <div className="mreg-lbl">Cliente</div>
@@ -650,7 +662,7 @@ function ContentRegistro({ row }) {
         )}
         <div className="mreg-field">
           <div className="mreg-lbl">Feedback</div>
-          <div className="mreg-val"><FBadge fb={row.feedback_empresa} /></div>
+          <div className="mreg-val"><StBadge st={normFeedback(row.feedback_empresa)} /></div>
         </div>
         {row.assunto_feedback && (
           <div className="mreg-field mreg-full">
@@ -785,7 +797,10 @@ export function Modal({ state, onClose, rawRows }) {
   useEffect(() => {
     if (state.type) {
       document.body.style.overflow = 'hidden'
-      setTimeout(() => bodyRef.current?.scrollTo(0, 0), 10)
+      setTimeout(() => {
+        const scroll = bodyRef.current?.querySelector('.modal-scroll')
+        if (scroll) scroll.scrollTo(0, 0)
+      }, 10)
     } else {
       document.body.style.overflow = ''
     }

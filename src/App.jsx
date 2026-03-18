@@ -114,24 +114,6 @@ export default function App() {
           </div>
         </div>
 
-        {/* Filter chips (apenas SEMANA e MÊS) */}
-        {!isHoje && hasFilters && (
-          <div className="fchips">
-            <span className="fchip-lbl">Filtros ativos:</span>
-            {filterType && (
-              <span className="b ba" style={{ cursor: 'pointer' }} onClick={() => setFilterType(null)}>
-                {filterType} &times;
-              </span>
-            )}
-            {activeDay && (
-              <span className="b bn" style={{ cursor: 'pointer' }} onClick={() => setActiveDay(null)}>
-                {activeDay} &times;
-              </span>
-            )}
-            <button className="fclear" onClick={clearAll}>Limpar tudo</button>
-          </div>
-        )}
-
         {/* ── Tab Panels (grid overlap — zero layout shift) ── */}
         <div className="tab-panels">
           <div className={`tab-panel${isHoje ? '' : ' tab-panel--hidden'}`}>
@@ -242,8 +224,7 @@ export default function App() {
               <CardLinha data={d.linha} label={d.linhaLabel} ak={tab} loading={loading}
                 hasRealData={hasRealData} activeDay={activeDay} setActiveDay={setActiveDay} />
               <CardDonut data={d.donut} ak={tab} loading={loading}
-                filterType={filterType} setFilterType={setFilterType}
-                onOpenModal={(tipo) => openModal('tipo', tipo)} />
+                filterType={filterType} setFilterType={setFilterType} />
             </div>
 
             {/* Barras + Tabela */}

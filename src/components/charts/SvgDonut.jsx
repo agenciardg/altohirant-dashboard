@@ -2,7 +2,7 @@ import { useMemo, memo } from 'react'
 
 const CX = 100, CY = 68, OUTER = 56, INNER = 45, GAP = (3 * Math.PI) / 180
 
-function SvgDonutInner({ data, filterType, setFilterType, onOpenModal }) {
+function SvgDonutInner({ data, filterType, setFilterType }) {
   const total = useMemo(() => data.reduce((s, d) => s + d.value, 0), [data])
 
   const segs = useMemo(() => {
@@ -32,7 +32,7 @@ function SvgDonutInner({ data, filterType, setFilterType, onOpenModal }) {
             role="button" aria-label={`${s.name}`}
             stroke={isAct ? 'white' : 'none'} strokeWidth={isAct ? 2.5 : 0}
             style={{ opacity: isDim ? 0.25 : 1, cursor: 'pointer', transition: 'opacity 0.22s', filter: isAct ? 'drop-shadow(0 0 5px rgba(0,0,0,0.4))' : 'none' }}
-            onClick={() => { setFilterType(isAct ? null : s.name); if (onOpenModal) onOpenModal(s.name) }}
+            onClick={() => setFilterType(isAct ? null : s.name)}
           />
         )
       })}

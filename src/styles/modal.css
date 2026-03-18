@@ -13,7 +13,7 @@
   animation:fadeSlide .2s ease;
 }
 .modal-box {
-  width:100%; max-width:660px; max-height:82vh;
+  width:100%; max-width:660px; height:82vh;
   display:flex; flex-direction:column; overflow:hidden;
   background:var(--card-grad, var(--card));
   border:1px solid var(--border);
@@ -46,15 +46,25 @@
 .modal-close:hover { background:rgba(232,93,4,0.15); color:#E85D04; }
 .modal-close:focus-visible { outline:2px solid #E85D04; outline-offset:2px; }
 .modal-body {
-  padding:20px 22px 28px;
+  padding:20px 22px 0;
+  flex:1; min-height:0;
+  display:flex; flex-direction:column;
+  overflow:hidden;
+}
+/* Área de scroll interno — tudo abaixo dos stats rola aqui */
+.modal-scroll {
   flex:1; min-height:0;
   overflow-y:auto; overflow-x:hidden;
+  padding-bottom:16px;
   scrollbar-width:thin; scrollbar-color:rgba(232,93,4,0.35) transparent;
+  display:flex; flex-direction:column;
 }
-.modal-body::-webkit-scrollbar { width:5px }
-.modal-body::-webkit-scrollbar-track { background:transparent }
-.modal-body::-webkit-scrollbar-thumb { background:rgba(232,93,4,0.35); border-radius:99px }
-.modal-body::-webkit-scrollbar-thumb:hover { background:rgba(232,93,4,0.65) }
+/* Dentro do modal, .tscr preenche todo o espaço restante */
+.modal-scroll .tscr { flex:1; min-height:0; max-height:none; }
+.modal-scroll::-webkit-scrollbar { width:5px }
+.modal-scroll::-webkit-scrollbar-track { background:transparent }
+.modal-scroll::-webkit-scrollbar-thumb { background:rgba(232,93,4,0.35); border-radius:99px }
+.modal-scroll::-webkit-scrollbar-thumb:hover { background:rgba(232,93,4,0.65) }
 
 .modal-box::after {
   content:'';
@@ -84,11 +94,14 @@
   background:rgba(232,93,4,0.08);
 }
 
-/* Stats summary */
-.mstats { display:flex; gap:0; margin-bottom:20px; border:1px solid var(--border); border-radius:12px; overflow:hidden; }
-.mstat { flex:1; padding:14px 12px; text-align:center; border-right:1px solid var(--border); }
+/* Stats summary — agora são filtros clicáveis */
+.mstats { display:flex; gap:0; margin-bottom:20px; border:1px solid var(--border); border-radius:12px; overflow:hidden; flex-shrink:0; }
+.mstat { flex:1; padding:14px 12px; text-align:center; border-right:1px solid var(--border); cursor:pointer; user-select:none; transition:background .18s, box-shadow .18s; position:relative; }
 .mstat:last-child { border-right:none; }
-.mstat-val { font-family:'Playfair Display',serif; font-weight:900; font-size:26px; color:var(--t1); line-height:1.1; }
+.mstat:hover { background:rgba(232,93,4,0.06); }
+.mstat--active { background:rgba(232,93,4,0.10); box-shadow:inset 0 -3px 0 #E85D04; }
+.mstat--active .mstat-val { color:#E85D04; }
+.mstat-val { font-family:'Playfair Display',serif; font-weight:900; font-size:26px; color:var(--t1); line-height:1.1; transition:color .18s; }
 .mstat-lbl { font-size:9px; font-weight:600; letter-spacing:.12em; text-transform:uppercase; color:var(--t2); margin-top:4px; }
 .mstat-sub { font-size:9px; color:var(--t3); margin-top:2px; }
 
@@ -97,6 +110,7 @@
   font-size:10px; font-weight:700; letter-spacing:.13em; text-transform:uppercase;
   color:var(--t2); margin:0 0 10px;
   padding-bottom:8px; border-bottom:1px solid var(--border);
+  flex-shrink:0;
 }
 
 /* Row */
@@ -133,7 +147,7 @@
 .mb-fora     { background:rgba(239,68,68,.1);   color:#EF4444; }
 
 /* Empty state */
-.mempty { text-align:center; padding:32px; color:var(--t3); font-style:italic; font-size:13px; }
+.mempty { text-align:center; padding:32px; color:var(--t3); font-style:italic; font-size:13px; flex-shrink:0; }
 
 /* Sentiment bar */
 .msent-wrap { margin-bottom:20px; }
@@ -148,7 +162,7 @@
 .msent-neg-li { color:#EF4444; }
 
 /* Pico chart */
-.mpico-chart { display:flex; flex-direction:column; gap:6px; }
+.mpico-chart { display:flex; flex-direction:column; gap:6px; flex-shrink:0; }
 .mpico-row { display:flex; align-items:center; gap:10px; }
 .mpico-lbl { font-size:11px; font-weight:600; color:var(--t2); min-width:36px; text-align:right; flex-shrink:0; }
 .mpico-bar-wrap { flex:1; background:var(--border); border-radius:4px; height:8px; overflow:hidden; }

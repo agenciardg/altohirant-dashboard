@@ -249,8 +249,8 @@ function processData(rows, _prevRows, tab) {
   const reclamacoes = rows.filter(r => normTipo(r.tipo_atendimento) === 'Reclamacao').length
   const programacaoCount = rows.filter(r => normTipo(r.tipo_atendimento) === 'Programacao').length
 
-  // Satisfação: apenas registros com feedback_empresa IS NOT NULL
-  const comFeedback = rows.filter(r => r.feedback_empresa != null)
+  // Satisfação: apenas registros com feedback_empresa preenchido
+  const comFeedback = rows.filter(r => r.feedback_empresa != null && r.feedback_empresa !== '')
   const positivos = comFeedback.filter(r => normFeedback(r.feedback_empresa) === 'Positivo').length
   const negativos = comFeedback.filter(r => normFeedback(r.feedback_empresa) === 'Negativo').length
   const satisfacao = (positivos + negativos) > 0
