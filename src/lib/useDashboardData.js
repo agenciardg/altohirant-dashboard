@@ -366,6 +366,8 @@ async function fetchWithRetry(queryFn, retries = MAX_RETRIES) {
 }
 
 /* ── Hook principal ── */
+const POLL_INTERVAL = 30_000 // 30 segundos
+
 export function useDashboardData(tab) {
   const [state, setState] = useState({ loading: true, data: null, error: null })
 
@@ -373,7 +375,7 @@ export function useDashboardData(tab) {
     setState(s => ({ ...s, loading: true }))
     let cancelled = false
 
-    async function load() {
+    async function load(isPolling) {
       try {
         const { start, end, prevStart, prevEnd } = dateRange(tab)
 
@@ -414,12 +416,17 @@ export function useDashboardData(tab) {
       } catch (err) {
         const message = err?.message || 'Erro desconhecido ao carregar dados'
         console.error('[useDashboardData]', { tab, error: err })
-        if (!cancelled) setState({ loading: false, data: null, error: message })
+        // Em polling silencioso, mantém dados antigos em vez de limpar tudo
+        if (!cancelled && !isPolling) setState({ loading: false, data: null, error: message })
       }
     }
 
-    load()
-    return () => { cancelled = true }
+    load(false)
+
+    // Polling automático para manter dados atualizados
+    const interval = setInterval(() => load(true), POLL_INTERVAL)
+
+    return () => { cancelled = true; clearInterval(interval) }
   }, [tab])
 
   return state
