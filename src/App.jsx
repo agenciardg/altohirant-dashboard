@@ -16,6 +16,7 @@ import { CardTabela } from './components/cards/CardTabela'
 import { ReservasHoje } from './components/ReservasHoje'
 import { DetailPanel } from './components/DetailPanel'
 import { TurnoAtual } from './components/TurnoAtual'
+import { FidelizacaoPanel } from './components/FidelizacaoPanel'
 
 /* ══ APP ═════════════════════════════════════════════════════════════════════ */
 export default function App() {
@@ -254,6 +255,9 @@ export default function App() {
                 hasRealData={hasRealData} supabaseOk={supabaseOk}
                 onOpenModal={(row) => openModal('registro', row)} />
             </div>
+
+            {/* Fidelização de Clientes */}
+            <FidelizacaoPanel data={d.fidelizacao} loading={loading} onOpenModal={openModal} />
           </div>
         </div>
 

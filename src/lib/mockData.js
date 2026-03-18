@@ -50,6 +50,14 @@ export const MOCK = {
       { id: '#007', h: '20:02', cli: 'Roberto Alves',  tipo: 'Aniversario',  turno: 'Jantar',      st: 'Positivo' },
       { id: '#008', h: '21:19', cli: 'Fernanda Rocha', tipo: 'Geral',        turno: 'Jantar',      st: null },
     ],
+    fidelizacao: {
+      novos: 5, retornantes: 7, taxa: 58,
+      evolucao: [{ dia: '18/03', novos: 5, retornantes: 7 }],
+      frequentes: [
+        { nome: 'Joao Silva', numero: '5511999001', diasContato: 3, count: 5, retornante: true },
+        { nome: 'Maria Santos', numero: '5511999002', diasContato: 2, count: 3, retornante: true },
+      ],
+    },
   },
   semana: {
     kpis: {
@@ -97,6 +105,20 @@ export const MOCK = {
       { id: '#003', h: '13:02', cli: 'Pedro Costa',    tipo: 'Localizacao',  turno: 'Almoco',      st: null },
       { id: '#004', h: '19:18', cli: 'Ana Lima',       tipo: 'Aniversario',  turno: 'Happy Hour',  st: 'Positivo' },
     ],
+    fidelizacao: {
+      novos: 35, retornantes: 54, taxa: 61,
+      evolucao: [
+        { dia: '12/03', novos: 4, retornantes: 6 }, { dia: '13/03', novos: 5, retornantes: 7 },
+        { dia: '14/03', novos: 3, retornantes: 8 }, { dia: '15/03', novos: 6, retornantes: 9 },
+        { dia: '16/03', novos: 5, retornantes: 8 }, { dia: '17/03', novos: 7, retornantes: 10 },
+        { dia: '18/03', novos: 5, retornantes: 6 },
+      ],
+      frequentes: [
+        { nome: 'Joao Silva', numero: '5511999001', diasContato: 5, count: 12, retornante: true },
+        { nome: 'Maria Santos', numero: '5511999002', diasContato: 4, count: 8, retornante: true },
+        { nome: 'Pedro Costa', numero: '5511999003', diasContato: 3, count: 5, retornante: true },
+      ],
+    },
   },
   mes: {
     kpis: {
@@ -142,5 +164,18 @@ export const MOCK = {
       { id: '#001', h: '12:43', cli: 'Joao Silva',     tipo: 'Reservas',    turno: 'Almoco',  st: 'Positivo' },
       { id: '#002', h: '20:51', cli: 'Maria Santos',   tipo: 'Programacao', turno: 'Jantar',  st: null },
     ],
+    fidelizacao: {
+      novos: 142, retornantes: 170, taxa: 55,
+      evolucao: [
+        { dia: 'Sem 1', novos: 30, retornantes: 38 }, { dia: 'Sem 2', novos: 35, retornantes: 42 },
+        { dia: 'Sem 3', novos: 37, retornantes: 45 }, { dia: 'Sem 4', novos: 40, retornantes: 45 },
+      ],
+      frequentes: [
+        { nome: 'Joao Silva', numero: '5511999001', diasContato: 12, count: 28, retornante: true },
+        { nome: 'Maria Santos', numero: '5511999002', diasContato: 9, count: 18, retornante: true },
+        { nome: 'Pedro Costa', numero: '5511999003', diasContato: 7, count: 14, retornante: true },
+        { nome: 'Ana Lima', numero: '5511999004', diasContato: 5, count: 10, retornante: true },
+      ],
+    },
   },
 }

@@ -480,6 +480,81 @@ function ContentProgramacao({ rows }) {
   )
 }
 
+/* ── Conteúdo: Fidelização de Clientes ── */
+function ContentFidelizacao({ rows }) {
+  const novos = rows.filter(r => !r.cliente_retornante)
+  const retornantes = rows.filter(r => !!r.cliente_retornante)
+  const total = rows.length || 1
+  const taxa = Math.round((retornantes.length / total) * 100)
+
+  // Agrupar por cliente para tabela de frequentes
+  const clientMap = {}
+  rows.forEach(r => {
+    const key = r.numero_cliente || 'desconhecido'
+    if (!clientMap[key]) clientMap[key] = { nome: r.nome_cliente || key, numero: key, dias: new Set(), count: 0, retornante: false }
+    if (r.nome_cliente && clientMap[key].nome === key) clientMap[key].nome = r.nome_cliente
+    if (r.data) clientMap[key].dias.add(r.data)
+    clientMap[key].count++
+    if (r.cliente_retornante) clientMap[key].retornante = true
+  })
+  const frequentes = Object.values(clientMap)
+    .map(c => ({ ...c, diasContato: c.dias.size }))
+    .filter(c => c.diasContato > 1)
+    .sort((a, b) => b.diasContato - a.diasContato || b.count - a.count)
+    .slice(0, 10)
+
+  const corRet = taxa >= 30 ? '#22C55E' : taxa >= 15 ? '#F59E0B' : '#EF4444'
+  const labelTaxa = taxa >= 30 ? 'Boa retenção' : taxa >= 15 ? 'Retenção moderada' : 'Retenção baixa'
+
+  return (
+    <>
+      <div className="mstats">
+        <StatRow value={novos.length} label="Clientes Novos" sub={`${Math.round((novos.length / total) * 100)}%`} />
+        <StatRow value={retornantes.length} label="Retornantes" sub={`${Math.round((retornantes.length / total) * 100)}%`} />
+        <StatRow value={`${taxa}%`} label="Taxa de Retorno" sub={labelTaxa} />
+        <StatRow value={total} label="Total registros" />
+      </div>
+
+      {frequentes.length > 0 && (
+        <>
+          <div className="msec-title">Clientes mais frequentes (multi-dia)</div>
+          {frequentes.map((c, i) => (
+            <div className="mrow" key={i}>
+              <div className="mrow-hora">
+                <span className="mrow-h" style={{ fontSize: '1.1rem' }}>{c.diasContato}d</span>
+                <span className="mrow-d" style={{ fontSize: 9 }}>{c.count} msgs</span>
+              </div>
+              <div className="mrow-info">
+                <div className="mrow-cli">{c.nome}</div>
+                {c.nome !== c.numero && <div className="mrow-tel">{c.numero}</div>}
+              </div>
+              <div className="mrow-badges">
+                <span className={`mb-badge ${c.retornante ? 'mb-res' : 'mb-prog'}`}>
+                  {c.retornante ? '🔁 Retornante' : '🆕 Novo'}
+                </span>
+              </div>
+            </div>
+          ))}
+        </>
+      )}
+
+      <div className="msec-title">Clientes retornantes</div>
+      {retornantes.length === 0
+        ? <div className="mempty">Nenhum cliente retornante neste período</div>
+        : retornantes.map((r, i) => <MRow key={'r' + i} row={r} />)
+      }
+
+      {novos.length > 0 && (
+        <>
+          <div className="msec-title">Clientes novos</div>
+          {novos.slice(0, 20).map((r, i) => <MRow key={'n' + i} row={r} />)}
+          {novos.length > 20 && <div className="mempty">...e mais {novos.length - 20} novos</div>}
+        </>
+      )}
+    </>
+  )
+}
+
 /* ── Conteúdo: Tipo de Atendimento ── */
 function ContentTipo({ rows, tipo }) {
   const filtered = tipo === 'Sem dados' ? rows : rows.filter(r => normTipo(r.tipo_atendimento) === tipo)
@@ -631,6 +706,7 @@ const MODAL_REGISTRY = {
   reclamacoes:  { icon: '⚠️', title: 'Reclamações',              sub: 'Detalhes das reclamações',            Component: ContentReclamacoes,  prop: 'rows' },
   aniversarios: { icon: '🎂', title: 'Aniversários',             sub: 'Clientes aniversariantes',            Component: ContentAniversarios, prop: 'rows' },
   programacao:  { icon: '📅', title: 'Interesse por Programação', sub: 'Dias mais procurados',                Component: ContentProgramacao,  prop: 'rows' },
+  fidelizacao:  { icon: '🔁', title: 'Fidelização de Clientes',  sub: 'Novos vs. Retornantes',               Component: ContentFidelizacao,  prop: 'rows' },
   tipo:         { icon: '🍽', title: 'Tipo de Atendimento',      sub: 'Detalhes por categoria',              Component: ContentTipo,         prop: 'rows' },
   turno:        { icon: '🕐', title: 'Almoço/HH × Jantar',      sub: 'Distribuição por turno',              Component: ContentTurno,        prop: 'rows' },
   registro:     { icon: '📋', title: 'Detalhes do Atendimento',  sub: 'Ficha completa',                     Component: ContentRegistro,     prop: 'row' },
