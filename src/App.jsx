@@ -140,8 +140,8 @@ export default function App() {
                 <div className="metrica-mini__label">Atendimentos</div>
                 <div className="metrica-mini__valor">{loading ? '—' : d.kpis.total.value}</div>
               </div>
-              <div className="metrica-mini metrica-mini--click" onClick={() => openModal('reservas')} title="Ver reservas (link GetIn)">
-                <div className="metrica-mini__label">Reservas</div>
+              <div className="metrica-mini metrica-mini--click" onClick={() => openModal('reservas')} title="Solicitações de reserva (link GetIn)">
+                <div className="metrica-mini__label">Solic. Reserva</div>
                 <div className="metrica-mini__valor">{loading ? '—' : d.kpis.reservas.value}</div>
               </div>
               <div className="metrica-mini metrica-mini--click" onClick={() => openModal('feedback')} title="Ver satisfação">
@@ -201,7 +201,7 @@ export default function App() {
                 ak={tab + 'u'}
                 onOpenModal={() => openModal('clientes')}
               />
-              <KPICard icon="🍖" label="Reservas" loading={loading}
+              <KPICard icon="🍖" label="Solic. Reserva" loading={loading}
                 value={d.kpis.reservas.value} sub={d.kpis.reservas.sub}
                 ak={tab + 'r'}
                 onOpenModal={() => openModal('reservas')}
@@ -229,10 +229,10 @@ export default function App() {
                 ak={tab + 'f'}
                 onOpenModal={() => openModal('fora')}
               />
-              <KPICard icon="🔥" label="Horário de Pico" sm loading={loading}
-                value={d.kpis.pico.value} sub={d.kpis.pico.sub}
-                ak={tab + 'p'}
-                onOpenModal={() => openModal('pico')}
+              <KPICard icon="📅" label="Programação" sm loading={loading}
+                value={d.kpis.programacao?.value || '0'} sub={d.kpis.programacao?.sub || '—'}
+                ak={tab + 'pg'}
+                onOpenModal={() => openModal('programacao')}
               />
             </div>
 

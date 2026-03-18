@@ -425,6 +425,70 @@ function ContentAniversarios({ rows }) {
   )
 }
 
+/* ── Conteúdo: Interesse por Programação ── */
+function ContentProgramacao({ rows }) {
+  const prog = rows.filter(r => r.dia_programacao_interesse)
+  const counts = {}
+  prog.forEach(r => { counts[r.dia_programacao_interesse] = (counts[r.dia_programacao_interesse] || 0) + 1 })
+  const ranking = Object.entries(counts).sort((a, b) => b[1] - a[1])
+  const totalProg = prog.length || 1
+  const maxVal = ranking.length > 0 ? ranking[0][1] : 1
+  const topDia = ranking[0] || null
+
+  const diasLabel = { segunda: 'Segunda', terca: 'Terça', quarta: 'Quarta', quinta: 'Quinta', sexta: 'Sexta', sabado: 'Sábado', domingo: 'Domingo' }
+
+  return (
+    <>
+      <div className="mstats">
+        <StatRow value={prog.length} label="Consultas de programação" />
+        {topDia && <StatRow value={diasLabel[topDia[0]] || topDia[0]} label="Dia mais procurado" sub={`${topDia[1]} perguntas (${Math.round(topDia[1] / totalProg * 100)}%)`} />}
+        <StatRow value={rows.length} label="Total interações" />
+      </div>
+
+      <div className="msec-title">Ranking — Dias mais perguntados</div>
+      <div className="mpico-chart">
+        {ranking.length === 0
+          ? <div className="mempty">Nenhuma consulta de programação neste período</div>
+          : ranking.map(([dia, v], i) => (
+            <div key={dia} className="mpico-row">
+              <div className="mpico-lbl" style={{ textTransform: 'capitalize' }}>{diasLabel[dia] || dia}</div>
+              <div className="mpico-bar-wrap">
+                <div
+                  className={`mpico-bar ${i === 0 ? 'mpico-bar-peak' : ''}`}
+                  style={{ width: Math.round((v / maxVal) * 100) + '%', background: i === 0 ? '#F59E0B' : '#3B82F6' }}
+                />
+              </div>
+              <div className="mpico-val">{v} <span style={{ fontSize: 9, color: 'var(--t3)' }}>({Math.round(v / totalProg * 100)}%)</span></div>
+            </div>
+          ))
+        }
+      </div>
+
+      {ranking.length > 0 && (
+        <>
+          <div className="msec-title" style={{ marginTop: 20 }}>Tabela comparativa</div>
+          <div className="tscr" style={{ marginTop: 8 }}>
+            <table>
+              <thead>
+                <tr><th>Dia</th><th>Perguntas</th><th>% do Total</th></tr>
+              </thead>
+              <tbody>
+                {ranking.map(([dia, v]) => (
+                  <tr key={dia}>
+                    <td style={{ textTransform: 'capitalize', fontWeight: 600 }}>{diasLabel[dia] || dia}</td>
+                    <td style={{ fontFamily: "'Playfair Display',serif", fontWeight: 700 }}>{v}</td>
+                    <td>{Math.round(v / totalProg * 100)}%</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </>
+      )}
+    </>
+  )
+}
+
 /* ── Conteúdo: Tipo de Atendimento ── */
 function ContentTipo({ rows, tipo }) {
   const filtered = tipo === 'Sem dados' ? rows : rows.filter(r => normTipo(r.tipo_atendimento) === tipo)
@@ -530,8 +594,12 @@ function ContentRegistro({ row }) {
         )}
         {row.tool_chamada && (
           <div className="mreg-field mreg-full">
-            <div className="mreg-lbl">Ferramenta utilizada</div>
-            <div className="mreg-val">{row.tool_chamada}</div>
+            <div className="mreg-lbl">Ferramentas utilizadas</div>
+            <div className="mreg-val" style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+              {row.tool_chamada.split(',').map((t, i) => (
+                <span key={i} className="mb-badge mb-out" style={{ fontSize: 10 }}>{t.trim()}</span>
+              ))}
+            </div>
           </div>
         )}
         <div className="mreg-field">
@@ -553,6 +621,7 @@ const MODAL_REGISTRY = {
   pico:         { icon: '🔥', title: 'Horário de Pico',          sub: 'Distribuição de volume por hora',     Component: ContentPico,         prop: 'rows' },
   reclamacoes:  { icon: '⚠️', title: 'Reclamações',              sub: 'Detalhes das reclamações',            Component: ContentReclamacoes,  prop: 'rows' },
   aniversarios: { icon: '🎂', title: 'Aniversários',             sub: 'Clientes aniversariantes',            Component: ContentAniversarios, prop: 'rows' },
+  programacao:  { icon: '📅', title: 'Interesse por Programação', sub: 'Dias mais procurados',                Component: ContentProgramacao,  prop: 'rows' },
   tipo:         { icon: '🍽', title: 'Tipo de Atendimento',      sub: 'Detalhes por categoria',              Component: ContentTipo,         prop: 'rows' },
   turno:        { icon: '🕐', title: 'Almoço/HH × Jantar',      sub: 'Distribuição por turno',              Component: ContentTurno,        prop: 'rows' },
   registro:     { icon: '📋', title: 'Detalhes do Atendimento',  sub: 'Ficha completa',                     Component: ContentRegistro,     prop: 'row' },
