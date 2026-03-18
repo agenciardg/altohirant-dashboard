@@ -33,16 +33,16 @@ function CardTabelaInner({ rows, filterType, loading, hasRealData, supabaseOk, o
         <div className="tscr">
           <table>
             <thead>
-              <tr><th>ID</th><th>Hora</th><th>Cliente</th><th>Tipo</th><th>Turno</th><th>Feedback</th></tr>
+              <tr><th>ID</th><th>Data</th><th>Hora</th><th>Cliente</th><th>Tipo</th><th>Turno</th><th>Feedback</th></tr>
             </thead>
             <tbody>
               {loading && (
-                <tr><td colSpan={6} style={{ textAlign: 'center', padding: 28, color: 'var(--t2)' }}>
+                <tr><td colSpan={7} style={{ textAlign: 'center', padding: 28, color: 'var(--t2)' }}>
                   Carregando dados do banco de dados...
                 </td></tr>
               )}
               {!loading && filtered.length === 0 && (
-                <tr><td colSpan={6} style={{ textAlign: 'center', padding: 28, color: 'var(--t3)', fontStyle: 'italic' }}>
+                <tr><td colSpan={7} style={{ textAlign: 'center', padding: 28, color: 'var(--t3)', fontStyle: 'italic' }}>
                   {supabaseOk ? 'Nenhum atendimento neste período' : 'Nenhum registro encontrado'}
                 </td></tr>
               )}
@@ -51,6 +51,7 @@ function CardTabelaInner({ rows, filterType, loading, hasRealData, supabaseOk, o
                   onClick={() => onOpenModal && onOpenModal(r._raw || r)}
                   title="Clique para ver detalhes">
                   <td style={{ color: 'var(--t3)', fontSize: 11, fontFamily: 'monospace' }}>{r.id}</td>
+                  <td style={{ fontSize: 11, color: 'var(--t2)', whiteSpace: 'nowrap' }}>{r.dt}</td>
                   <td style={{ fontFamily: "'Playfair Display',serif", fontWeight: 700, fontSize: 13 }}>{r.h}</td>
                   <td style={{ fontWeight: 600 }}>{r.cli}</td>
                   <td><TipoBadge tipo={r.tipo} /></td>

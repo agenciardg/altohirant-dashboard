@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, useCallback } from 'react'
 import { normTipo, normFeedback, normTurno, isDiurno } from './lib/utils'
 import { TipoBadge, StBadge, TurnoBadge } from './components/Badges'
 import { DIAS_ABREV } from './lib/constants'
+import { supabase } from './lib/supabase'
 
 /* ── Helpers ── */
 function fmt(hora) { return hora ? hora.slice(0, 5) : '--' }
@@ -18,14 +19,16 @@ function MTable({ rows, onClickRow }) {
     <div className="tscr">
       <table>
         <thead>
-          <tr><th>ID</th><th>Hora</th><th>Cliente</th><th>Tipo</th><th>Turno</th><th>Feedback</th></tr>
+          <tr><th>ID</th><th>Data</th><th>Hora</th><th>Cliente</th><th>Tipo</th><th>Turno</th><th>Feedback</th></tr>
         </thead>
         <tbody>
           {rows.map((r, i) => (
             <tr key={i}
-              style={{ cursor: onClickRow ? 'pointer' : undefined }}
-              onClick={() => onClickRow && onClickRow(r)}>
+              style={{ cursor: 'pointer' }}
+              onClick={() => onClickRow && onClickRow(r)}
+              title="Clique para ver conversa">
               <td style={{ color: 'var(--t3)', fontSize: 11, fontFamily: 'monospace' }}>#{String(i + 1).padStart(3, '0')}</td>
+              <td style={{ fontSize: 11, color: 'var(--t2)', whiteSpace: 'nowrap' }}>{fmtData(r.data)}</td>
               <td style={{ fontFamily: "'Playfair Display',serif", fontWeight: 700, fontSize: 13 }}>{fmt(r.hora)}</td>
               <td style={{ fontWeight: 600 }}>{r.nome_cliente || r.numero_cliente || 'Desconhecido'}</td>
               <td><TipoBadge tipo={normTipo(r.tipo_atendimento)} /></td>
@@ -51,7 +54,7 @@ function StatRow({ label, value, sub, onClick, active }) {
 }
 
 /* ── Conteúdo: Total Atendimentos ── */
-function ContentTotal({ rows }) {
+function ContentTotal({ rows, onClickRow }) {
   const [filter, setFilter] = useState(null)
   const total = rows.length
   const porTipo = {}
@@ -82,7 +85,7 @@ function ContentTotal({ rows }) {
         <div className="msec-title">{filter && filter !== 'clientes' ? `Filtrado: ${filter === 'fora' ? 'Fora do horário' : filter}` : 'Todos os atendimentos'} ({filtered.length})</div>
         {filtered.length === 0
           ? <div className="mempty">Nenhum atendimento neste período</div>
-          : <MTable rows={filtered} />
+          : <MTable rows={filtered} onClickRow={onClickRow} />
         }
       </div>
     </>
@@ -90,7 +93,7 @@ function ContentTotal({ rows }) {
 }
 
 /* ── Conteúdo: Reservas ── */
-function ContentReservas({ rows }) {
+function ContentReservas({ rows, onClickRow }) {
   const [filter, setFilter] = useState(null)
   const reservas = rows.filter(r => r.reserva_solicitada)
   const semReserva = rows.filter(r => !r.reserva_solicitada)
@@ -107,7 +110,7 @@ function ContentReservas({ rows }) {
         <div className="msec-title">{filter === 'reservas' ? 'Com reserva' : filter === 'sem' ? 'Sem reserva' : 'Todos'} ({filtered.length})</div>
         {filtered.length === 0
           ? <div className="mempty">Nenhuma reserva neste período</div>
-          : <MTable rows={filtered} />
+          : <MTable rows={filtered} onClickRow={onClickRow} />
         }
       </div>
     </>
@@ -115,7 +118,7 @@ function ContentReservas({ rows }) {
 }
 
 /* ── Conteúdo: Fora do Horário ── */
-function ContentFora({ rows }) {
+function ContentFora({ rows, onClickRow }) {
   const [filter, setFilter] = useState('fora')
   const fora = rows.filter(r => r.fora_horario)
   const noHorario = rows.filter(r => !r.fora_horario)
@@ -135,7 +138,7 @@ function ContentFora({ rows }) {
         <div className="msec-title">{filter === 'fora' ? 'Fora do horário' : filter === 'no' ? 'No horário' : 'Todos'} ({filtered.length})</div>
         {filtered.length === 0
           ? <div className="mempty">Nenhum atendimento nesta categoria</div>
-          : <MTable rows={filtered} />
+          : <MTable rows={filtered} onClickRow={onClickRow} />
         }
       </div>
     </>
@@ -143,7 +146,7 @@ function ContentFora({ rows }) {
 }
 
 /* ── Conteúdo: Horário de Pico ── */
-function ContentPico({ rows }) {
+function ContentPico({ rows, onClickRow }) {
   const [filter, setFilter] = useState(null)
   const counts = {}
   rows.forEach(r => {
@@ -216,7 +219,7 @@ function ContentPico({ rows }) {
             <div className="msec-title" style={{ marginTop: 24 }}>Registros filtrados ({filtered.length})</div>
             {filtered.length === 0
               ? <div className="mempty">Nenhum registro</div>
-              : <MTable rows={filtered} />
+              : <MTable rows={filtered} onClickRow={onClickRow} />
             }
           </>
         )}
@@ -226,7 +229,7 @@ function ContentPico({ rows }) {
 }
 
 /* ── Conteúdo: Feedbacks / Satisfação ── */
-function ContentFeedback({ rows }) {
+function ContentFeedback({ rows, onClickRow }) {
   const [filter, setFilter] = useState(null)
   const comFeedback = rows.filter(r => r.feedback_empresa != null && r.feedback_empresa !== '')
   const positivos = comFeedback.filter(r => normFeedback(r.feedback_empresa) === 'Positivo')
@@ -286,7 +289,7 @@ function ContentFeedback({ rows }) {
         <div className="msec-title">{filter === 'pos' ? 'Positivos' : filter === 'neg' ? 'Negativos' : filter === 'neutro' ? 'Neutros' : filter === 'sem' ? 'Sem feedback' : 'Todos com feedback'} ({filtered.length})</div>
         {filtered.length === 0
           ? <div className="mempty">Nenhum registro nesta categoria</div>
-          : <MTable rows={filtered} />
+          : <MTable rows={filtered} onClickRow={onClickRow} />
         }
       </div>
     </>
@@ -355,7 +358,7 @@ function ContentClientes({ rows }) {
 }
 
 /* ── Conteúdo: Reclamações ── */
-function ContentReclamacoes({ rows }) {
+function ContentReclamacoes({ rows, onClickRow }) {
   const [filter, setFilter] = useState('recl')
   const reclamacoes = rows.filter(r => normTipo(r.tipo_atendimento) === 'Reclamacao')
   const outros = rows.filter(r => normTipo(r.tipo_atendimento) !== 'Reclamacao')
@@ -397,7 +400,7 @@ function ContentReclamacoes({ rows }) {
         <div className="msec-title">{filter === 'recl' ? 'Reclamações' : 'Todos'} ({filtered.length})</div>
         {filtered.length === 0
           ? <div className="mempty">Nenhuma reclamação neste período</div>
-          : <MTable rows={filtered} />
+          : <MTable rows={filtered} onClickRow={onClickRow} />
         }
       </div>
     </>
@@ -405,7 +408,7 @@ function ContentReclamacoes({ rows }) {
 }
 
 /* ── Conteúdo: Aniversários ── */
-function ContentAniversarios({ rows }) {
+function ContentAniversarios({ rows, onClickRow }) {
   const [filter, setFilter] = useState('aniv')
   const aniversarios = rows.filter(r => r.eh_aniversario)
   const naoAniv = rows.filter(r => !r.eh_aniversario)
@@ -427,7 +430,7 @@ function ContentAniversarios({ rows }) {
         <div className="msec-title">{filter === 'aniv' ? 'Aniversariantes' : 'Todos'} ({filtered.length})</div>
         {filtered.length === 0
           ? <div className="mempty">Nenhum aniversário neste período</div>
-          : <MTable rows={filtered} />
+          : <MTable rows={filtered} onClickRow={onClickRow} />
         }
       </div>
     </>
@@ -435,7 +438,7 @@ function ContentAniversarios({ rows }) {
 }
 
 /* ── Conteúdo: Interesse por Programação ── */
-function ContentProgramacao({ rows }) {
+function ContentProgramacao({ rows, onClickRow }) {
   const [filter, setFilter] = useState('prog')
   const progRows = rows.filter(r => normTipo(r.tipo_atendimento) === 'Programacao')
   const total = rows.length || 1
@@ -484,7 +487,7 @@ function ContentProgramacao({ rows }) {
         <div className="msec-title">{filter === 'prog' ? 'Programação' : 'Todos'} ({filtered.length})</div>
         {filtered.length === 0
           ? <div className="mempty">Nenhuma consulta de programação neste período</div>
-          : <MTable rows={filtered} />
+          : <MTable rows={filtered} onClickRow={onClickRow} />
         }
       </div>
     </>
@@ -492,7 +495,7 @@ function ContentProgramacao({ rows }) {
 }
 
 /* ── Conteúdo: Fidelização de Clientes ── */
-function ContentFidelizacao({ rows }) {
+function ContentFidelizacao({ rows, onClickRow }) {
   const [filter, setFilter] = useState(null)
   const novos = rows.filter(r => !r.cliente_retornante)
   const retornantes = rows.filter(r => !!r.cliente_retornante)
@@ -557,7 +560,7 @@ function ContentFidelizacao({ rows }) {
         <div className="msec-title">{filter === 'novos' ? 'Clientes novos' : filter === 'retornantes' ? 'Clientes retornantes' : 'Todos os registros'} ({filtered.length})</div>
         {filtered.length === 0
           ? <div className="mempty">Nenhum registro nesta categoria</div>
-          : <MTable rows={filtered} />
+          : <MTable rows={filtered} onClickRow={onClickRow} />
         }
       </div>
     </>
@@ -565,7 +568,7 @@ function ContentFidelizacao({ rows }) {
 }
 
 /* ── Conteúdo: Tipo de Atendimento ── */
-function ContentTipo({ rows, tipo }) {
+function ContentTipo({ rows, tipo, onClickRow }) {
   const [filter, setFilter] = useState('tipo')
   const tipoRows = tipo === 'Sem dados' ? rows : rows.filter(r => normTipo(r.tipo_atendimento) === tipo)
   const outros = rows.filter(r => normTipo(r.tipo_atendimento) !== tipo)
@@ -582,7 +585,7 @@ function ContentTipo({ rows, tipo }) {
         <div className="msec-title">{filter === 'tipo' ? tipo : 'Todos'} ({filtered.length})</div>
         {filtered.length === 0
           ? <div className="mempty">Nenhum atendimento deste tipo no período</div>
-          : <MTable rows={filtered} />
+          : <MTable rows={filtered} onClickRow={onClickRow} />
         }
       </div>
     </>
@@ -590,7 +593,7 @@ function ContentTipo({ rows, tipo }) {
 }
 
 /* ── Conteúdo: Turno (Dia/Tarde x Noite por dia) ── */
-function ContentTurno({ rows, dia }) {
+function ContentTurno({ rows, dia, onClickRow }) {
   const [filter, setFilter] = useState(null)
   const allFiltered = dia ? rows.filter(r => {
     const diaRow = DIAS_ABREV[new Date(r.data + 'T12:00:00').getDay()]
@@ -613,7 +616,7 @@ function ContentTurno({ rows, dia }) {
         <div className="msec-title">{filter === 'almoco' ? 'Almoco / Happy Hour' : filter === 'jantar' ? 'Jantar' : 'Todos os turnos'} ({filtered.length})</div>
         {filtered.length === 0
           ? <div className="mempty">Nenhum atendimento{dia ? ` em ${dia}` : ''}</div>
-          : <MTable rows={filtered} />
+          : <MTable rows={filtered} onClickRow={onClickRow} />
         }
       </div>
     </>
@@ -707,6 +710,120 @@ function ContentRegistro({ row }) {
   )
 }
 
+/* ── Conteúdo: Conversa / Histórico de Mensagens ── */
+function ContentConversa({ row }) {
+  const [mensagens, setMensagens] = useState(null)
+  const [loading, setLoading] = useState(true)
+  const scrollRef = useRef(null)
+
+  useEffect(() => {
+    if (!row?.id) { setLoading(false); return }
+    let cancelled = false
+    async function fetchMensagens() {
+      setLoading(true)
+      const { data, error } = await supabase
+        .from('alto_hirant_mensagens')
+        .select('*')
+        .eq('dashboard_id', row.id)
+        .order('hora', { ascending: true })
+      if (!cancelled) {
+        setMensagens(error ? [] : (data || []))
+        setLoading(false)
+      }
+    }
+    fetchMensagens()
+    return () => { cancelled = true }
+  }, [row?.id])
+
+  useEffect(() => {
+    if (mensagens && scrollRef.current) {
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight
+    }
+  }, [mensagens])
+
+  if (!row) return <div className="mempty">Sem dados</div>
+
+  const fmtH = (h) => {
+    if (!h) return '--:--'
+    try {
+      const d = new Date(h)
+      if (isNaN(d)) return h.slice(11, 16) || '--:--'
+      return d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+    } catch { return '--:--' }
+  }
+
+  const tipoBadge = (tipo) => {
+    if (!tipo || tipo === 'texto') return null
+    const labels = { audio: 'Audio', imagem: 'Imagem', pdf: 'PDF', video: 'Video', localizacao: 'Localização' }
+    return <span className="chat-tipo-badge">[{labels[tipo] || tipo}]</span>
+  }
+
+  return (
+    <div className="conversa-container">
+      {/* Cabeçalho do atendimento */}
+      <div className="conversa-header">
+        <div className="conversa-header-row">
+          <div className="conversa-field">
+            <span className="conversa-label">Cliente</span>
+            <span className="conversa-value">{row.nome_cliente || row.numero_cliente || 'Desconhecido'}</span>
+          </div>
+          <div className="conversa-field">
+            <span className="conversa-label">Data</span>
+            <span className="conversa-value">{fmtData(row.data)}</span>
+          </div>
+          <div className="conversa-field">
+            <span className="conversa-label">Hora</span>
+            <span className="conversa-value">{fmt(row.hora)}</span>
+          </div>
+        </div>
+        <div className="conversa-header-row">
+          <div className="conversa-field">
+            <span className="conversa-label">Turno</span>
+            <span className="conversa-value">{row.turno ? normTurno(row.turno) : '—'}</span>
+          </div>
+          <div className="conversa-field">
+            <span className="conversa-label">Tipo</span>
+            <span className="conversa-value"><TipoBadge tipo={normTipo(row.tipo_atendimento)} /></span>
+          </div>
+          <div className="conversa-field">
+            <span className="conversa-label">Feedback</span>
+            <span className="conversa-value"><StBadge st={normFeedback(row.feedback_empresa)} /></span>
+          </div>
+        </div>
+      </div>
+
+      {/* Área de chat */}
+      <div className="conversa-chat-title">Conversa</div>
+      <div className="conversa-chat" ref={scrollRef}>
+        {loading ? (
+          <div className="mempty">Carregando mensagens...</div>
+        ) : !mensagens || mensagens.length === 0 ? (
+          <div className="mempty">Histórico de mensagens não disponível para este atendimento.</div>
+        ) : (
+          mensagens.map((m, i) => {
+            const isHelena = m.remetente === 'helena'
+            return (
+              <div key={m.id || i} className={`chat-bubble ${isHelena ? 'chat-helena' : 'chat-cliente'}`}>
+                <div className="chat-bubble-header">
+                  <span className="chat-sender">{isHelena ? 'Helena' : 'Cliente'}</span>
+                  <span className="chat-time">{fmtH(m.hora)}</span>
+                </div>
+                <div className="chat-content">
+                  {tipoBadge(m.tipo_mensagem)}
+                  {m.conteudo || ''}
+                </div>
+                {isHelena && m.tools_usadas && (
+                  <div className="chat-tools">Tools: {m.tools_usadas}</div>
+                )}
+              </div>
+            )
+          })
+        )}
+      </div>
+    </div>
+  )
+}
+
 /* ══ MODAL REGISTRY (factory pattern) ════════════════════════════════════════ */
 const MODAL_REGISTRY = {
   total:        { icon: '💬', title: 'Total de Interações',      sub: 'Todos os registros do período',       Component: ContentTotal,        prop: 'rows' },
@@ -722,11 +839,13 @@ const MODAL_REGISTRY = {
   tipo:         { icon: '🍽', title: 'Tipo de Atendimento',      sub: 'Detalhes por categoria',              Component: ContentTipo,         prop: 'rows' },
   turno:        { icon: '🕐', title: 'Almoço/HH × Jantar',      sub: 'Distribuição por turno',              Component: ContentTurno,        prop: 'rows' },
   registro:     { icon: '📋', title: 'Detalhes do Atendimento',  sub: 'Ficha completa',                     Component: ContentRegistro,     prop: 'row' },
+  conversa:     { icon: '💬', title: 'Histórico da Conversa',    sub: 'Mensagens trocadas',                 Component: ContentConversa,     prop: 'row' },
 }
 
 function getSubtitle(type, data, meta) {
   if (type === 'tipo') return `Categoria: ${data}`
   if (type === 'turno') return data ? `Dia: ${data}` : 'Período completo'
+  if (type === 'conversa' && data) return `${data.nome_cliente || data.numero_cliente || 'Cliente'} · ${fmtData(data.data)}`
   return meta.sub
 }
 
@@ -736,6 +855,7 @@ function getContentProps(type, data, rows) {
   if (type === 'tipo') return { rows, tipo: data }
   if (type === 'turno') return { rows, dia: data }
   if (type === 'registro') return { row: data }
+  if (type === 'conversa') return { row: data }
   return { rows }
 }
 
@@ -785,14 +905,20 @@ export function Modal({ state, onClose, rawRows }) {
   const justResized = useRef(false)
   const rows = rawRows || []
   const [size, setSize] = useState({ w: null, h: null })
+  const [conversaRow, setConversaRow] = useState(null)
 
   useFocusTrap(boxRef, !!state.type)
 
   useEffect(() => {
-    const onKey = e => { if (e.key === 'Escape') onClose() }
+    const onKey = e => {
+      if (e.key === 'Escape') {
+        if (conversaRow) setConversaRow(null)
+        else onClose()
+      }
+    }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [onClose])
+  }, [onClose, conversaRow])
 
   useEffect(() => {
     if (state.type) {
@@ -856,16 +982,30 @@ export function Modal({ state, onClose, rawRows }) {
     document.addEventListener('mouseup', onUp)
   }, [])
 
+  // Reset conversa when modal closes
+  useEffect(() => {
+    if (!state.type) setConversaRow(null)
+  }, [state.type])
+
   if (!state.type) return null
 
-  const entry = MODAL_REGISTRY[state.type] || { icon: '📊', title: state.type, sub: '', Component: () => null }
-  const { Component } = entry
-  const subtitle = getSubtitle(state.type, state.data, entry)
-  const contentProps = getContentProps(state.type, state.data, rows)
+  // If conversaRow is set, show the conversation modal instead
+  const showConversa = !!conversaRow
+  const activeType = showConversa ? 'conversa' : state.type
 
+  const entry = MODAL_REGISTRY[activeType] || { icon: '📊', title: activeType, sub: '', Component: () => null }
+  const { Component } = entry
+  const subtitle = showConversa
+    ? `${conversaRow.nome_cliente || conversaRow.numero_cliente || 'Cliente'} · ${fmtData(conversaRow.data)}`
+    : getSubtitle(state.type, state.data, entry)
+  const contentProps = showConversa
+    ? { row: conversaRow }
+    : getContentProps(state.type, state.data, rows)
+
+  const isConversaView = activeType === 'conversa'
   const boxStyle = size.w
     ? { width: size.w + 'px', height: size.h + 'px', maxWidth: 'none', maxHeight: 'none' }
-    : {}
+    : isConversaView ? { maxWidth: 700, width: '70%', minWidth: 500 } : {}
 
   return (
     <div
@@ -890,7 +1030,12 @@ export function Modal({ state, onClose, rawRows }) {
         </div>
 
         <div className="modal-body" ref={bodyRef}>
-          <Component {...contentProps} />
+          {showConversa && (
+            <button className="conversa-back" onClick={() => setConversaRow(null)}>
+              ← Voltar
+            </button>
+          )}
+          <Component {...contentProps} onClickRow={showConversa ? undefined : setConversaRow} />
         </div>
 
         <div

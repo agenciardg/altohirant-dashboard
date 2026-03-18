@@ -55,7 +55,7 @@ function FeedbackBadge({ fb }) {
   )
 }
 
-function DetailPanelInner({ item, onClose }) {
+function DetailPanelInner({ item, onClose, onOpenConversa }) {
   return (
     <div className="detail-panel" style={{
       width: 380,
@@ -210,6 +210,31 @@ function DetailPanelInner({ item, onClose }) {
                 : <Field label="DATA MENCIONADA" value={fmtData(item.data_reserva_pedida)} />
               }
             </div>
+          )}
+
+          {/* Botão Ver Conversa */}
+          {onOpenConversa && (
+            <button
+              onClick={() => onOpenConversa(item)}
+              style={{
+                marginTop: '1rem',
+                width: '100%',
+                padding: '0.6rem 1rem',
+                background: 'rgba(232,93,4,0.12)',
+                border: '1px solid rgba(232,93,4,0.3)',
+                borderRadius: 8,
+                color: '#F97316',
+                fontWeight: 700,
+                fontSize: '0.8rem',
+                letterSpacing: '0.05em',
+                cursor: 'pointer',
+                transition: 'background .18s, border-color .18s',
+              }}
+              onMouseEnter={e => { e.target.style.background = 'rgba(232,93,4,0.2)'; e.target.style.borderColor = 'rgba(232,93,4,0.5)' }}
+              onMouseLeave={e => { e.target.style.background = 'rgba(232,93,4,0.12)'; e.target.style.borderColor = 'rgba(232,93,4,0.3)' }}
+            >
+              💬 Ver Conversa
+            </button>
           )}
         </div>
       )}

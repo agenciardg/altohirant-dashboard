@@ -160,6 +160,7 @@ export default function App() {
                 <DetailPanel
                   item={selectedItem}
                   onClose={() => setSelectedItem(null)}
+                  onOpenConversa={(row) => openModal('conversa', row)}
                 />
                 <TurnoAtual />
               </div>

@@ -167,9 +167,16 @@ function buildBarras(rows, tab) {
 }
 
 /* ── Tabela ── */
+function fmtDataBR(data) {
+  if (!data) return '--'
+  const [y, m, d] = data.split('-')
+  return `${d}/${m}/${y}`
+}
+
 function buildRows(rows) {
   return rows.map((r, i) => ({
     id: `#${String(i + 1).padStart(3, '0')}`,
+    dt: fmtDataBR(r.data),
     h: (r.hora || '00:00').slice(0, 5),
     cli: r.nome_cliente || r.numero_cliente || 'Desconhecido',
     tipo: normTipo(r.tipo_atendimento),
