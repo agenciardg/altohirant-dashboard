@@ -46,6 +46,12 @@
 - **Prompts:** 4 (Hook dados, FidelizacaoPanel, Modal, Integrar App)
 - **Commit:** 06cafc9
 
+### 06-sync-historico-mensagens-modal.md
+- **Status:** Implementado (2026-03-18)
+- **O que faz:** Coluna DATA (DD/MM/YYYY) em todas as tabelas/modais + modal de historico de conversa estilo WhatsApp. Busca mensagens reais da tabela `alto_hirant_mensagens` (1:N via dashboard_id). Baloes cliente/Helena, tools usadas, scroll, ESC para voltar
+- **Prompts:** 1 (Coluna DATA + Modal Historico de Conversa)
+- **Commit:** 592d593
+
 ---
 
 ## Como adicionar novos prompts
