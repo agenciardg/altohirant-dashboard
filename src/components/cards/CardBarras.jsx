@@ -10,7 +10,7 @@ function CardBarrasInner({ data, label, activeDay, setActiveDay, ak, loading, on
     <div className="card">
       <div className="ch">
         <div>
-          <div className="ct">Almoço x HH x Jantar</div>
+          <div className="ct">Distribuição por Turno</div>
           <div key={ak} className="cs fi">{label}</div>
         </div>
         <div className="bleg">
@@ -31,6 +31,12 @@ function CardBarrasInner({ data, label, activeDay, setActiveDay, ak, loading, on
             onClick={() => toggleTurno('j')}
             title="Filtrar Jantar">
             <div className="bls" style={{ background: COLORS.jantar }} />Jantar
+          </div>
+          <div
+            className={`bli clickable${activeTurno === 'f' ? ' bli-act' : ''}${activeTurno && activeTurno !== 'f' ? ' bli-dim' : ''}`}
+            onClick={() => toggleTurno('f')}
+            title="Filtrar Fora do Horário">
+            <div className="bls" style={{ background: COLORS.fora }} />Fora
           </div>
         </div>
       </div>

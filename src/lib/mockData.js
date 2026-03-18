@@ -38,7 +38,7 @@ export const MOCK = {
     ],
     barLabel: 'Distribuição por turno',
     barras: [
-      { d: 'Almoco', al: 28, hh: 0, j: 0 }, { d: 'Happy Hour', al: 0, hh: 16, j: 5 }, { d: 'Jantar', al: 0, hh: 0, j: 25 },
+      { d: 'Almoco', al: 28, hh: 0, j: 0, f: 0 }, { d: 'Happy Hour', al: 0, hh: 16, j: 5, f: 0 }, { d: 'Jantar', al: 0, hh: 0, j: 25, f: 0 }, { d: 'Fora Horário', al: 0, hh: 0, j: 0, f: 5 },
     ],
     tableRows: [
       { id: '#001', h: '12:43', cli: 'Joao Silva',     tipo: 'Reservas',     turno: 'Almoco',      st: 'Positivo' },
@@ -88,8 +88,8 @@ export const MOCK = {
     ],
     barLabel: 'Almoço/HH x Jantar — 7 dias',
     barras: [
-      { d: 'Seg', al: 10, hh: 12, j: 20 }, { d: 'Ter', al: 8, hh: 10, j: 20 }, { d: 'Qua', al: 12, hh: 13, j: 26 },
-      { d: 'Qui', al: 10, hh: 11, j: 24 }, { d: 'Sex', al: 14, hh: 16, j: 37 }, { d: 'Sab', al: 18, hh: 20, j: 51 }, { d: 'Dom', al: 15, hh: 17, j: 42 },
+      { d: 'Seg', al: 10, hh: 12, j: 20, f: 3 }, { d: 'Ter', al: 8, hh: 10, j: 20, f: 2 }, { d: 'Qua', al: 12, hh: 13, j: 26, f: 4 },
+      { d: 'Qui', al: 10, hh: 11, j: 24, f: 2 }, { d: 'Sex', al: 14, hh: 16, j: 37, f: 3 }, { d: 'Sab', al: 18, hh: 20, j: 51, f: 2 }, { d: 'Dom', al: 15, hh: 17, j: 42, f: 2 },
     ],
     tableRows: [
       { id: '#001', h: '12:43', cli: 'Joao Silva',     tipo: 'Reservas',     turno: 'Almoco',      st: 'Positivo' },
@@ -135,8 +135,8 @@ export const MOCK = {
     ],
     barLabel: 'Almoço/HH x Jantar — mensal',
     barras: [
-      { d: 'Sem 1', al: 75, hh: 90, j: 215 }, { d: 'Sem 2', al: 80, hh: 100, j: 240 },
-      { d: 'Sem 3', al: 88, hh: 110, j: 254 }, { d: 'Sem 4', al: 115, hh: 142, j: 331 },
+      { d: 'Sem 1', al: 75, hh: 90, j: 215, f: 12 }, { d: 'Sem 2', al: 80, hh: 100, j: 240, f: 15 },
+      { d: 'Sem 3', al: 88, hh: 110, j: 254, f: 18 }, { d: 'Sem 4', al: 115, hh: 142, j: 331, f: 27 },
     ],
     tableRows: [
       { id: '#001', h: '12:43', cli: 'Joao Silva',     tipo: 'Reservas',    turno: 'Almoco',  st: 'Positivo' },

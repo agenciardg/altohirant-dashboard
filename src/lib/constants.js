@@ -9,6 +9,7 @@ export const COLORS = {
   almoco: '#e8a020',
   happyHour: '#8A6A3A',
   jantar: '#E85D04',
+  fora: '#EF4444',
   success: '#22C55E',
   warning: '#F59E0B',
   purple: '#8B5CF6',

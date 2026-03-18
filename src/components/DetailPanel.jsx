@@ -202,10 +202,13 @@ function DetailPanelInner({ item, onClose }) {
             )}
           </div>
 
-          {/* Data reserva pedida */}
+          {/* Data reserva pedida — só destaca se é reserva real */}
           {item.data_reserva_pedida && (
             <div style={{ marginTop: '0.75rem' }}>
-              <Field label="RESERVA PARA" value={fmtData(item.data_reserva_pedida)} highlight />
+              {item.reserva_solicitada
+                ? <Field label="RESERVA PARA" value={fmtData(item.data_reserva_pedida)} highlight />
+                : <Field label="DATA MENCIONADA" value={fmtData(item.data_reserva_pedida)} />
+              }
             </div>
           )}
         </div>

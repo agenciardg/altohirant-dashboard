@@ -107,30 +107,31 @@ function buildDonut(rows) {
     }))
 }
 
-/* ── Barras (3 turnos: al=Almoço, hh=Happy Hour, j=Jantar) ── */
+/* ── Barras (4 turnos: al=Almoço, hh=Happy Hour, j=Jantar, f=Fora Horário) ── */
 function classifyTurno(turno) {
   const t = normTurno(turno)
   if (t === 'Almoco') return 'al'
   if (t === 'Happy Hour') return 'hh'
+  if (t === 'Fora Horário') return 'f'
   return 'j'
 }
 
 function buildBarras(rows, tab) {
   const now = new Date()
-  const empty = { al: 0, hh: 0, j: 0 }
+  const empty = { al: 0, hh: 0, j: 0, f: 0 }
 
   if (tab === 'hoje') {
-    const turnos = ['Almoco', 'Happy Hour', 'Jantar']
+    const turnos = ['Almoco', 'Happy Hour', 'Jantar', 'Fora Horário']
     const counts = {}
-    turnos.forEach(t => { counts[t] = { al: 0, hh: 0, j: 0 } })
+    turnos.forEach(t => { counts[t] = { ...empty } })
     rows.forEach(r => {
       const lbl = normTurno(r.turno)
-      const mapped = lbl === 'Fora Horário' ? 'Jantar' : (lbl === 'Almoco' || lbl === 'Happy Hour' || lbl === 'Jantar' ? lbl : 'Jantar')
+      const mapped = counts[lbl] ? lbl : 'Jantar'
       const cls = classifyTurno(r.turno)
       if (counts[mapped]) counts[mapped][cls]++
     })
     const result = turnos
-      .filter(t => counts[t].al + counts[t].hh + counts[t].j > 0)
+      .filter(t => counts[t].al + counts[t].hh + counts[t].j + counts[t].f > 0)
       .map(d => ({ d, ...counts[d] }))
     return result.length > 0
       ? result
@@ -144,7 +145,7 @@ function buildBarras(rows, tab) {
       days.push({ iso: isoDate(d), label: DIAS_ABREV[d.getDay()] })
     }
     const counts = {}
-    days.forEach(({ iso }) => { counts[iso] = { al: 0, hh: 0, j: 0 } })
+    days.forEach(({ iso }) => { counts[iso] = { ...empty } })
     rows.forEach(r => {
       if (counts[r.data]) {
         counts[r.data][classifyTurno(r.turno)]++
@@ -156,7 +157,7 @@ function buildBarras(rows, tab) {
   // mes — por semana
   const sems = ['Sem 1', 'Sem 2', 'Sem 3', 'Sem 4']
   const counts = {}
-  sems.forEach(s => { counts[s] = { al: 0, hh: 0, j: 0 } })
+  sems.forEach(s => { counts[s] = { ...empty } })
   rows.forEach(r => {
     const day = new Date(r.data + 'T12:00:00').getDate()
     const sem = day <= 7 ? 'Sem 1' : day <= 14 ? 'Sem 2' : day <= 21 ? 'Sem 3' : 'Sem 4'

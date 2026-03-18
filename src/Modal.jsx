@@ -579,7 +579,7 @@ function ContentRegistro({ row }) {
         </div>
         {row.data_reserva_pedida && (
           <div className="mreg-field">
-            <div className="mreg-lbl">Data reserva</div>
+            <div className="mreg-lbl">{row.reserva_solicitada ? 'Reserva para' : 'Data mencionada'}</div>
             <div className="mreg-val">{fmtData(row.data_reserva_pedida)}</div>
           </div>
         )}
