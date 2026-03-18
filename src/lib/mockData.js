@@ -42,13 +42,13 @@ export const MOCK = {
     ],
     tableRows: [
       { id: '#001', h: '12:43', cli: 'Joao Silva',     tipo: 'Reservas',     turno: 'Almoco',      st: 'Positivo' },
-      { id: '#002', h: '12:51', cli: 'Maria Santos',   tipo: 'Programacao',  turno: 'Almoco',      st: '—' },
-      { id: '#003', h: '13:02', cli: 'Pedro Costa',    tipo: 'Localizacao',  turno: 'Almoco',      st: '—' },
+      { id: '#002', h: '12:51', cli: 'Maria Santos',   tipo: 'Programacao',  turno: 'Almoco',      st: null },
+      { id: '#003', h: '13:02', cli: 'Pedro Costa',    tipo: 'Localizacao',  turno: 'Almoco',      st: null },
       { id: '#004', h: '13:18', cli: 'Ana Lima',       tipo: 'Reservas',     turno: 'Almoco',      st: 'Positivo' },
       { id: '#005', h: '18:31', cli: 'Carlos Mendes',  tipo: 'Cardapio',     turno: 'Happy Hour',  st: 'Negativo' },
       { id: '#006', h: '19:45', cli: 'Lucia Ferreira', tipo: 'Reservas',     turno: 'Happy Hour',  st: 'Positivo' },
       { id: '#007', h: '20:02', cli: 'Roberto Alves',  tipo: 'Aniversario',  turno: 'Jantar',      st: 'Positivo' },
-      { id: '#008', h: '21:19', cli: 'Fernanda Rocha', tipo: 'Geral',        turno: 'Jantar',      st: '—' },
+      { id: '#008', h: '21:19', cli: 'Fernanda Rocha', tipo: 'Geral',        turno: 'Jantar',      st: null },
     ],
   },
   semana: {
@@ -93,8 +93,8 @@ export const MOCK = {
     ],
     tableRows: [
       { id: '#001', h: '12:43', cli: 'Joao Silva',     tipo: 'Reservas',     turno: 'Almoco',      st: 'Positivo' },
-      { id: '#002', h: '12:51', cli: 'Maria Santos',   tipo: 'Programacao',  turno: 'Almoco',      st: '—' },
-      { id: '#003', h: '13:02', cli: 'Pedro Costa',    tipo: 'Localizacao',  turno: 'Almoco',      st: '—' },
+      { id: '#002', h: '12:51', cli: 'Maria Santos',   tipo: 'Programacao',  turno: 'Almoco',      st: null },
+      { id: '#003', h: '13:02', cli: 'Pedro Costa',    tipo: 'Localizacao',  turno: 'Almoco',      st: null },
       { id: '#004', h: '19:18', cli: 'Ana Lima',       tipo: 'Aniversario',  turno: 'Happy Hour',  st: 'Positivo' },
     ],
   },
@@ -140,7 +140,7 @@ export const MOCK = {
     ],
     tableRows: [
       { id: '#001', h: '12:43', cli: 'Joao Silva',     tipo: 'Reservas',    turno: 'Almoco',  st: 'Positivo' },
-      { id: '#002', h: '20:51', cli: 'Maria Santos',   tipo: 'Programacao', turno: 'Jantar',  st: '—' },
+      { id: '#002', h: '20:51', cli: 'Maria Santos',   tipo: 'Programacao', turno: 'Jantar',  st: null },
     ],
   },
 }

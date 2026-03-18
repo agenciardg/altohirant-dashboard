@@ -27,6 +27,14 @@ function cortesiaAniversario(qtd) {
 
 function FeedbackBadge({ fb }) {
   const n = normFeedback(fb)
+  if (n == null) return (
+    <span style={{
+      padding: '0.2rem 0.6rem', borderRadius: 4, fontSize: '0.8rem', fontWeight: 600,
+      background: 'rgba(150, 150, 150, 0.08)', color: 'var(--t3)', opacity: 0.6,
+    }}>
+      Sem feedback
+    </span>
+  )
   const styles = {
     Positivo: { bg: 'rgba(74, 222, 128, 0.15)', color: 'var(--success, #4ade80)' },
     Negativo: { bg: 'rgba(239, 68, 68, 0.15)', color: 'var(--danger, #ef4444)' },
@@ -151,6 +159,13 @@ function DetailPanelInner({ item, onClose }) {
             </div>
           )}
 
+          {/* Qtd pessoas (quando não é aniversário) */}
+          {!item.eh_aniversario && item.qtd_pessoas != null && (
+            <div style={{ marginBottom: '0.75rem' }}>
+              <Field label="PESSOAS NO GRUPO" value={`${item.qtd_pessoas} pessoa${item.qtd_pessoas !== 1 ? 's' : ''}`} />
+            </div>
+          )}
+
           {/* Feedback */}
           <div style={{ marginBottom: '0.75rem' }}>
             <div style={{
@@ -167,6 +182,25 @@ function DetailPanelInner({ item, onClose }) {
 
           {/* Fora do horário */}
           <Field label="FORA DO HORÁRIO" value={item.fora_horario ? 'Sim' : 'Não'} />
+
+          {/* Métricas de sessão */}
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: '1fr 1fr',
+            gap: '0.75rem',
+            marginTop: '0.75rem',
+            paddingTop: '0.75rem',
+            borderTop: '1px solid var(--border)',
+          }}>
+            {item.tempo_resposta_ms != null && (
+              <Field label="TEMPO RESPOSTA" value={item.tempo_resposta_ms < 1000
+                ? `${item.tempo_resposta_ms}ms`
+                : `${(item.tempo_resposta_ms / 1000).toFixed(1)}s`} />
+            )}
+            {item.qtd_mensagens_sessao != null && (
+              <Field label="MENSAGENS" value={`${item.qtd_mensagens_sessao} msg${item.qtd_mensagens_sessao !== 1 ? 's' : ''}`} />
+            )}
+          </div>
 
           {/* Data reserva pedida */}
           {item.data_reserva_pedida && (

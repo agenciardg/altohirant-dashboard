@@ -13,6 +13,7 @@ function fmtData(data) {
 /* ── Sub-badges ── */
 function FBadge({ fb }) {
   const n = normFeedback(fb)
+  if (n == null) return <span className="mb-badge mb-neutro" style={{ opacity: 0.5 }}>— Sem feedback</span>
   const cls = n === 'Positivo' ? 'mb-positivo' : n === 'Negativo' ? 'mb-negativo' : 'mb-neutro'
   const ico = n === 'Positivo' ? '↑' : n === 'Negativo' ? '↓' : '→'
   return <span className={`mb-badge ${cls}`}>{ico} {n}</span>
@@ -606,6 +607,24 @@ function ContentRegistro({ row }) {
           <div className="mreg-lbl">Fora do horário</div>
           <div className="mreg-val">{row.fora_horario ? '⚠ Sim' : 'Não'}</div>
         </div>
+        {row.qtd_pessoas != null && (
+          <div className="mreg-field">
+            <div className="mreg-lbl">Pessoas no grupo</div>
+            <div className="mreg-val">{row.qtd_pessoas}</div>
+          </div>
+        )}
+        {row.tempo_resposta_ms != null && (
+          <div className="mreg-field">
+            <div className="mreg-lbl">Tempo resposta</div>
+            <div className="mreg-val">{row.tempo_resposta_ms < 1000 ? `${row.tempo_resposta_ms}ms` : `${(row.tempo_resposta_ms / 1000).toFixed(1)}s`}</div>
+          </div>
+        )}
+        {row.qtd_mensagens_sessao != null && (
+          <div className="mreg-field">
+            <div className="mreg-lbl">Mensagens na sessão</div>
+            <div className="mreg-val">{row.qtd_mensagens_sessao}</div>
+          </div>
+        )}
       </div>
     </div>
   )

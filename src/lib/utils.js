@@ -22,7 +22,7 @@ export function normTipo(t) {
 
 /* ── Normalização de feedback ────────────────────────────────────────────── */
 export function normFeedback(f) {
-  if (!f) return 'Neutro'
+  if (f == null || f === '') return null
   const l = stripAccents(f.trim().toLowerCase())
   if (l.includes('positiv')) return 'Positivo'
   if (l.includes('negativ')) return 'Negativo'

@@ -6,6 +6,11 @@ function TipoBadgeInner({ tipo }) {
 }
 
 function StBadgeInner({ st }) {
+  if (st == null) return <span style={{
+    fontSize: 10, fontWeight: 700, letterSpacing: '0.06em',
+    padding: '3px 9px', borderRadius: 20, whiteSpace: 'nowrap',
+    background: 'rgba(150, 150, 150, 0.08)', color: '#6b6560',
+  }}>— Sem feedback</span>
   const styles = {
     Positivo: { bg: 'rgba(74, 222, 128, 0.15)', color: '#4ade80', icon: '↑' },
     Negativo: { bg: 'rgba(239, 68, 68, 0.15)', color: '#ef4444', icon: '↓' },
