@@ -49,7 +49,7 @@ export const BAR_CHART = {
 
 /* ── UI ── */
 export const PAGE_SIZE = 10
-export const CLOCK_INTERVAL = 30000
+export const CLOCK_INTERVAL = 60000
 export const MAX_LABEL_POINTS = 7
 
 /* ── Dias da semana abreviados ── */

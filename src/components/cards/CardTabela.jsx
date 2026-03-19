@@ -5,7 +5,7 @@ import { PAGE_SIZE, COLORS } from '../../lib/constants'
 function CardTabelaInner({ rows, filterType, loading, hasRealData, supabaseOk, onOpenModal }) {
   const [page, setPage] = useState(0)
 
-  const filtered = filterType ? rows.filter(r => r.tipo === filterType) : rows
+  const filtered = rows
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE))
   const safePage = Math.min(page, totalPages - 1)
   const pageRows = filtered.slice(safePage * PAGE_SIZE, safePage * PAGE_SIZE + PAGE_SIZE)

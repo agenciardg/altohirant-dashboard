@@ -80,10 +80,10 @@ export const MOCK = {
       { dia: 'quarta', count: 8 }, { dia: 'domingo', count: 5 }, { dia: 'terca', count: 3 }, { dia: 'segunda', count: 1 },
     ],
     diaMaisProcurado: { dia: 'sexta', count: 18 },
-    linhaLabel: 'Semana atual — Volume diário',
+    linhaLabel: 'Esta Semana — Volume diário',
     linha: [
-      { dia: 'Seg', total: 42 }, { dia: 'Ter', total: 38 }, { dia: 'Qua', total: 51 },
-      { dia: 'Qui', total: 45 }, { dia: 'Sex', total: 67 }, { dia: 'Sab', total: 89 }, { dia: 'Dom', total: 74 },
+      { dia: 'Dom', total: 74 }, { dia: 'Seg', total: 42 }, { dia: 'Ter', total: 0, fechado: true },
+      { dia: 'Qua', total: 51 }, { dia: 'Qui', total: 45 }, { dia: 'Sex', total: 67 }, { dia: 'Sáb', total: 89 },
     ],
     donut: [
       { name: 'Reservas',     value: 38,  color: '#22C55E', pct: '9%' },
@@ -94,10 +94,11 @@ export const MOCK = {
       { name: 'Aniversario',  value: 18,  color: '#EC4899', pct: '4%' },
       { name: 'Reclamacao',   value: 18,  color: '#DC2626', pct: '5%' },
     ],
-    barLabel: 'Almoço/HH x Jantar — 7 dias',
+    barLabel: 'Almoço/HH x Jantar — semana',
     barras: [
-      { d: 'Seg', al: 10, hh: 12, j: 20, f: 3 }, { d: 'Ter', al: 8, hh: 10, j: 20, f: 2 }, { d: 'Qua', al: 12, hh: 13, j: 26, f: 4 },
-      { d: 'Qui', al: 10, hh: 11, j: 24, f: 2 }, { d: 'Sex', al: 14, hh: 16, j: 37, f: 3 }, { d: 'Sab', al: 18, hh: 20, j: 51, f: 2 }, { d: 'Dom', al: 15, hh: 17, j: 42, f: 2 },
+      { d: 'Dom', al: 15, hh: 17, j: 42, f: 2 }, { d: 'Seg', al: 10, hh: 12, j: 20, f: 3 },
+      { d: 'Ter', al: 0, hh: 0, j: 0, f: 0, fechado: true }, { d: 'Qua', al: 12, hh: 13, j: 26, f: 4 },
+      { d: 'Qui', al: 10, hh: 11, j: 24, f: 2 }, { d: 'Sex', al: 14, hh: 16, j: 37, f: 3 }, { d: 'Sáb', al: 18, hh: 20, j: 51, f: 2 },
     ],
     tableRows: [
       { id: '#001', h: '12:43', cli: 'Joao Silva',     tipo: 'Reservas',     turno: 'Almoco',      st: 'Positivo' },

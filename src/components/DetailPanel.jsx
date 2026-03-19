@@ -56,6 +56,39 @@ function FeedbackBadge({ fb }) {
 }
 
 function DetailPanelInner({ item, onClose, onOpenConversa }) {
+  if (!item) {
+    return (
+      <div className="detail-panel detail-panel--empty" style={{
+        width: 380,
+        background: 'var(--card)',
+        border: '1px dashed var(--border)',
+        borderRadius: 16,
+        transition: 'background 0.35s, border-color 0.35s',
+        opacity: 0.7,
+      }}>
+        <div style={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          minHeight: 120,
+          color: 'var(--t3)',
+          textAlign: 'center',
+          padding: '1.5rem 2rem',
+          gap: '0.4rem',
+        }}>
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--t3)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ opacity: 0.5, marginBottom: 4 }}>
+            <rect x="3" y="3" width="18" height="18" rx="2" />
+            <line x1="9" y1="9" x2="15" y2="9" />
+            <line x1="9" y1="13" x2="13" y2="13" />
+          </svg>
+          <div style={{ fontSize: '0.85rem', fontWeight: 600 }}>Selecione uma reserva para ver os detalhes</div>
+          <div style={{ fontSize: '0.72rem', opacity: 0.7 }}>Clique em qualquer item da lista de reservas</div>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="detail-panel" style={{
       width: 380,
@@ -66,21 +99,6 @@ function DetailPanelInner({ item, onClose, onOpenConversa }) {
       transition: 'transform 0.2s ease-out, background 0.35s, border-color 0.35s',
       boxShadow: 'var(--card-glow, none)',
     }}>
-      {!item ? (
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          height: '100%',
-          minHeight: 300,
-          color: 'var(--t3)',
-          fontSize: '0.85rem',
-          textAlign: 'center',
-          padding: '2rem',
-        }}>
-          Selecione um atendimento para ver detalhes
-        </div>
-      ) : (
         <div style={{ padding: '1.25rem' }}>
           {/* Header */}
           <div style={{
@@ -237,7 +255,6 @@ function DetailPanelInner({ item, onClose, onOpenConversa }) {
             </button>
           )}
         </div>
-      )}
     </div>
   )
 }

@@ -11,10 +11,25 @@ function SvgLineInner({ data, activeDay, setActiveDay }) {
   const gx = (i, len) => len < 2 ? PL + IW / 2 : PL + (i / (len - 1)) * IW
   const gy = (v, max) => PT + (1 - v / max) * IH
 
-  const pts = useMemo(
-    () => data.map((d, i) => `${gx(i, n)},${gy(d.total, maxV)}`).join(' '),
-    [data, maxV, n] // gx/gy are pure functions of their args, stable by definition
-  )
+  // Build polyline segments, switching to dashed before a fechado point
+  const segments = useMemo(() => {
+    if (n < 2) return []
+    const segs = []
+    let solidPts = []
+    for (let i = 0; i < n; i++) {
+      const x = gx(i, n)
+      const y = gy(data[i].total, maxV)
+      const nextIsFechado = i < n - 1 && data[i + 1].fechado
+      solidPts.push(`${x},${y}`)
+      if (nextIsFechado || data[i].fechado) {
+        if (solidPts.length >= 2) segs.push({ pts: solidPts.join(' '), dashed: data[i].fechado })
+        else if (solidPts.length === 1 && i > 0) segs.push({ pts: `${gx(i - 1, n)},${gy(data[i - 1].total, maxV)} ${x},${y}`, dashed: data[i].fechado })
+        solidPts = [`${x},${y}`]
+      }
+    }
+    if (solidPts.length >= 2) segs.push({ pts: solidPts.join(' '), dashed: false })
+    return segs
+  }, [data, maxV, n])
 
   const step = Math.ceil(n / MAX_LABEL_POINTS)
   const hasFilt = !!activeDay
@@ -37,16 +52,41 @@ function SvgLineInner({ data, activeDay, setActiveDay }) {
           </g>
         )
       })}
-      {n > 1 && <polyline points={pts} fill="none" stroke="url(#lg)" strokeWidth="2.5" strokeLinejoin="round" strokeLinecap="round" />}
+      {n > 1 && segments.map((seg, si) => (
+        <polyline key={si} points={seg.pts} fill="none" stroke="url(#lg)" strokeWidth="2.5"
+          strokeLinejoin="round" strokeLinecap="round"
+          strokeDasharray={seg.dashed ? '4 3' : undefined} />
+      ))}
+      {n === 1 && <polyline points={`${gx(0, n)},${gy(data[0].total, maxV)}`} fill="none" stroke="url(#lg)" strokeWidth="2.5" />}
       {data.map((d, i) => {
         const x = gx(i, n), y = gy(d.total, maxV)
-        const isAct = activeDay === d.dia
+        const isFechado = !!d.fechado
+        // Support both iso-keyed and label-keyed active day comparisons
+        const isAct = activeDay === d.dia || (d.iso && activeDay === d.iso)
         const isDim = hasFilt && !isAct
         const showLbl = n <= MAX_LABEL_POINTS || i % step === 0 || i === n - 1 || isAct
+        if (isFechado) {
+          return (
+            <g key={i} style={{ cursor: 'default' }} aria-label={`${d.dia}: fechado`}>
+              <circle cx={x} cy={y} r={5}
+                style={{ fill: '#666', stroke: '#666', strokeWidth: 1.5, opacity: isDim ? 0.25 : 1 }} />
+              {showLbl && (
+                <text x={x} y={H + PB - 4} textAnchor="middle" fontSize={9} fontWeight={400}
+                  style={{ fill: 'var(--t2)' }}>
+                  {d.dia}
+                </text>
+              )}
+              <text x={x} y={y + 16} textAnchor="middle" fontSize={8}
+                style={{ fill: 'var(--t3)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                FECHADO
+              </text>
+            </g>
+          )
+        }
         return (
           <g key={i} style={{ cursor: 'pointer' }}
             role="button" aria-label={`${d.dia}: ${d.total} atendimentos`}
-            onClick={() => setActiveDay(isAct ? null : d.dia)}
+            onClick={() => setActiveDay(isAct ? null : d)}
             onMouseEnter={() => setTip({ x, y, lbl: d.dia, val: d.total })}
             onMouseLeave={() => setTip(null)}>
             <circle cx={x} cy={y} r={isAct ? 8 : isDim ? 3 : 5}

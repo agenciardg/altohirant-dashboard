@@ -27,6 +27,29 @@ function CssBarInner({ data, activeDay, setActiveDay, activeTurno, onOpenModal }
         const dimHh = activeTurno && activeTurno !== 'hh'
         const dimJ = activeTurno && activeTurno !== 'j'
         const dimF = activeTurno && activeTurno !== 'f'
+        const isFechado = !!d.fechado
+        const hatchBg = 'repeating-linear-gradient(45deg, rgba(255,255,255,0.07) 0px, rgba(255,255,255,0.07) 3px, transparent 3px, transparent 8px)'
+
+        if (isFechado) {
+          return (
+            <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-end', cursor: 'default', opacity: isDim ? 0.25 : 0.55, transition: 'opacity 0.22s' }}
+              aria-label={`${d.d}: fechado`}>
+              <div style={{ height: 44 }} />
+              <div style={{ display: 'flex', alignItems: 'flex-end', gap: 2, height: BAR_H }}>
+                <div style={{ width: 8, height: Math.max(4, BAR_H * 0.18), background: `${hatchBg}, #444`, borderRadius: '3px 3px 0 0' }} />
+                <div style={{ width: 8, height: Math.max(4, BAR_H * 0.18), background: `${hatchBg}, #444`, borderRadius: '3px 3px 0 0' }} />
+                <div style={{ width: 8, height: Math.max(4, BAR_H * 0.18), background: `${hatchBg}, #444`, borderRadius: '3px 3px 0 0' }} />
+              </div>
+              <div style={{ fontSize: 9, fontWeight: 600, color: 'var(--t2)', marginTop: 6, letterSpacing: '0.06em', textTransform: 'uppercase', textAlign: 'center' }}>
+                {d.d}
+              </div>
+              <div style={{ fontSize: 8, color: 'var(--t3)', textTransform: 'uppercase', letterSpacing: '0.05em', marginTop: 2, textAlign: 'center' }}>
+                FECHADO
+              </div>
+            </div>
+          )
+        }
+
         return (
           <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-end', cursor: 'pointer', opacity: isDim ? 0.25 : 1, transition: 'opacity 0.22s' }}
             role="button" aria-label={`${d.d}: Almoço ${d.al || 0}, HH ${d.hh || 0}, Jantar ${d.j || 0}, Fora ${d.f || 0}`}

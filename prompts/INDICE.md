@@ -1,6 +1,6 @@
 # Indice de Prompts — Dashboard Alto da Hirant
 
-> Ultima atualizacao: 2026-03-18
+> Ultima atualizacao: 2026-03-19
 
 ---
 
@@ -9,7 +9,8 @@
 | Prefixo | Significado |
 |---------|-------------|
 | `v1-` | Versao 1 dos prompts (historico, migrations 001-002) |
-| `v2-` | Versao 2 dos prompts (atual, migrations 003-005) |
+| `v2-` | Versao 2 dos prompts (historico, migrations 003-005) |
+| `v3-` | Versao 3 premium — refatoracao + filtros + drill-down |
 | `sync-` | Sincronizacao pontual — mudanca no backend refletida no dashboard |
 
 ---
@@ -51,6 +52,13 @@
 - **O que faz:** Coluna DATA (DD/MM/YYYY) em todas as tabelas/modais + modal de historico de conversa estilo WhatsApp. Busca mensagens reais da tabela `alto_hirant_mensagens` (1:N via dashboard_id). Baloes cliente/Helena, tools usadas, scroll, ESC para voltar
 - **Prompts:** 1 (Coluna DATA + Modal Historico de Conversa)
 - **Commit:** 592d593
+
+### 07-v3-premium-refatoracao-filtros-drilldown.md
+- **Status:** IMPLEMENTADO (2026-03-19)
+- **O que faz:** Versao 3 premium do dashboard — refatoracao arquitetural (FilterContext + processData split), semana comecando domingo, terca FECHADO, deltas nos KPIs, KPIs colapsiveis, seletor de dia na semana, cross-filtering universal, aba Hoje com donut, drill-down mensal Mes→Semana→Dia com breadcrumb
+- **Prompts:** 11 (Fase 0: 4 prompts, Fase 1: 3 prompts, Fase 2: 3 prompts, Fase 3: 1 prompt)
+- **Ordem:** Sequencial obrigatoria — Fase 0 → 1 → 2 → 3
+- **Origem:** Analise conjunta de 3 agentes (frontend-developer, ui-ux-designer, architect-reviewer)
 
 ---
 

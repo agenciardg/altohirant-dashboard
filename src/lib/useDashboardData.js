@@ -1,22 +1,11 @@
 import { useState, useEffect } from 'react'
 import { supabase } from './supabase'
-import { normTipo, normFeedback, normTurno, isDiurno } from './utils'
-import { DIAS_ABREV, DONUT_COLORS, DONUT_ORDER } from './constants'
+import { computeKPIs } from './dataProcessors/computeKPIs'
+import { computeCharts, isoDate, subDays } from './dataProcessors/computeCharts'
+import { computeTableRows } from './dataProcessors/computeTableRows'
+import { computeFidelizacao } from './dataProcessors/computeFidelizacao'
 
-/* ── Helpers de data ── */
-function isoDate(d) {
-  const y = d.getFullYear()
-  const m = String(d.getMonth() + 1).padStart(2, '0')
-  const day = String(d.getDate()).padStart(2, '0')
-  return `${y}-${m}-${day}`
-}
-
-function subDays(date, n) {
-  const d = new Date(date)
-  d.setDate(d.getDate() - n)
-  return d
-}
-
+/* ── Date range helper ── */
 function dateRange(tab) {
   const now = new Date()
   const today = isoDate(now)
@@ -31,11 +20,12 @@ function dateRange(tab) {
   }
 
   if (tab === 'semana') {
-    // Últimos 7 dias corridos (não semana calendário)
-    const start = isoDate(subDays(now, 6))
-    const prevStart = isoDate(subDays(now, 13))
-    const prevEnd = isoDate(subDays(now, 7))
-    return { start, end: today, prevStart, prevEnd }
+    // Semana calendário: domingo a sábado
+    const dayOfWeek = now.getDay() // 0=Dom ... 6=Sab
+    const sunday = subDays(now, dayOfWeek)
+    const start = isoDate(sunday)
+    const prevSunday = subDays(sunday, 7)
+    return { start, end: today, prevStart: isoDate(prevSunday), prevEnd: isoDate(subDays(sunday, 1)) }
   }
 
   // mes — mês atual completo
@@ -50,310 +40,50 @@ function dateRange(tab) {
   }
 }
 
-/* ── Linha ── */
-function buildLinha(rows, tab) {
-  const now = new Date()
+/* ── Orchestrator ── */
 
-  if (tab === 'hoje') {
-    const counts = {}
-    rows.forEach(r => {
-      const h = parseInt((r.hora || '00:00').split(':')[0])
-      const lbl = `${h}h`
-      counts[lbl] = (counts[lbl] || 0) + 1
-    })
-    if (Object.keys(counts).length === 0) return []
-    return Object.keys(counts)
-      .sort((a, b) => parseInt(a) - parseInt(b))
-      .map(h => ({ dia: h, total: counts[h] }))
-  }
-
-  if (tab === 'semana') {
-    // Últimos 7 dias corridos
-    const days = []
-    for (let i = 6; i >= 0; i--) {
-      const d = subDays(now, i)
-      days.push({ iso: isoDate(d), label: DIAS_ABREV[d.getDay()] })
-    }
-    const counts = {}
-    days.forEach(({ iso }) => { counts[iso] = 0 })
-    rows.forEach(r => { if (r.data in counts) counts[r.data]++ })
-    return days.map(({ iso, label }) => ({ dia: label, total: counts[iso] }))
-  }
-
-  // mes — por semana
-  const counts = { 'Sem 1': 0, 'Sem 2': 0, 'Sem 3': 0, 'Sem 4': 0 }
-  rows.forEach(r => {
-    const day = new Date(r.data + 'T12:00:00').getDate()
-    const sem = day <= 7 ? 'Sem 1' : day <= 14 ? 'Sem 2' : day <= 21 ? 'Sem 3' : 'Sem 4'
-    counts[sem]++
-  })
-  return Object.entries(counts).map(([dia, total]) => ({ dia, total }))
-}
-
-/* ── Donut ── (DONUT_COLORS e DONUT_ORDER importados de constants.js) */
-
-function buildDonut(rows) {
-  if (rows.length === 0) {
-    // Placeholder visível para estado vazio
-    return [{ name: 'Sem dados', value: 1, color: '#2A2A2A', pct: '—' }]
-  }
-  const counts = { Reservas: 0, Programacao: 0, Cardapio: 0, Localizacao: 0, Geral: 0, Aniversario: 0, Reclamacao: 0, Outros: 0 }
-  rows.forEach(r => { counts[normTipo(r.tipo_atendimento)]++ })
-  const total = rows.length
-  return DONUT_ORDER
-    .filter(k => counts[k] > 0)
-    .map(k => ({
-      name: k,
-      value: counts[k],
-      color: DONUT_COLORS[k],
-      pct: Math.round((counts[k] / total) * 100) + '%',
-    }))
-}
-
-/* ── Barras (4 turnos: al=Almoço, hh=Happy Hour, j=Jantar, f=Fora Horário) ── */
-function classifyTurno(turno) {
-  const t = normTurno(turno)
-  if (t === 'Almoco') return 'al'
-  if (t === 'Happy Hour') return 'hh'
-  if (t === 'Fora Horário') return 'f'
-  return 'j'
-}
-
-function buildBarras(rows, tab) {
-  const now = new Date()
-  const empty = { al: 0, hh: 0, j: 0, f: 0 }
-
-  if (tab === 'hoje') {
-    const turnos = ['Almoco', 'Happy Hour', 'Jantar', 'Fora Horário']
-    const counts = {}
-    turnos.forEach(t => { counts[t] = { ...empty } })
-    rows.forEach(r => {
-      const lbl = normTurno(r.turno)
-      const mapped = counts[lbl] ? lbl : 'Jantar'
-      const cls = classifyTurno(r.turno)
-      if (counts[mapped]) counts[mapped][cls]++
-    })
-    const result = turnos
-      .filter(t => counts[t].al + counts[t].hh + counts[t].j + counts[t].f > 0)
-      .map(d => ({ d, ...counts[d] }))
-    return result.length > 0
-      ? result
-      : [{ d: 'Almoco', ...empty }, { d: 'Happy Hour', ...empty }, { d: 'Jantar', ...empty }]
-  }
-
-  if (tab === 'semana') {
-    const days = []
-    for (let i = 6; i >= 0; i--) {
-      const d = subDays(now, i)
-      days.push({ iso: isoDate(d), label: DIAS_ABREV[d.getDay()] })
-    }
-    const counts = {}
-    days.forEach(({ iso }) => { counts[iso] = { ...empty } })
-    rows.forEach(r => {
-      if (counts[r.data]) {
-        counts[r.data][classifyTurno(r.turno)]++
-      }
-    })
-    return days.map(({ iso, label }) => ({ d: label, ...counts[iso] }))
-  }
-
-  // mes — por semana
-  const sems = ['Sem 1', 'Sem 2', 'Sem 3', 'Sem 4']
-  const counts = {}
-  sems.forEach(s => { counts[s] = { ...empty } })
-  rows.forEach(r => {
-    const day = new Date(r.data + 'T12:00:00').getDate()
-    const sem = day <= 7 ? 'Sem 1' : day <= 14 ? 'Sem 2' : day <= 21 ? 'Sem 3' : 'Sem 4'
-    counts[sem][classifyTurno(r.turno)]++
-  })
-  return sems.map(d => ({ d, ...counts[d] }))
-}
-
-/* ── Tabela ── */
-function fmtDataBR(data) {
-  if (!data) return '--'
-  const [y, m, d] = data.split('-')
-  return `${d}/${m}/${y}`
-}
-
-function buildRows(rows) {
-  return rows.map((r, i) => ({
-    id: `#${String(i + 1).padStart(3, '0')}`,
-    dt: fmtDataBR(r.data),
-    h: (r.hora || '00:00').slice(0, 5),
-    cli: r.nome_cliente || r.numero_cliente || 'Desconhecido',
-    tipo: normTipo(r.tipo_atendimento),
-    st: normFeedback(r.feedback_empresa),
-    turno: normTurno(r.turno),
-    _raw: r,
-  }))
-}
-
-/* ── Horário de pico ── */
-function calcPico(rows) {
-  if (!rows.length) return { hora: '--', turno: '--' }
-  const horaCounts = {}
-  rows.forEach(r => {
-    const h = (r.hora || '00:00').split(':')[0]
-    horaCounts[h] = (horaCounts[h] || 0) + 1
-  })
-  const picoH = Object.entries(horaCounts).sort((a, b) => b[1] - a[1])[0]?.[0] || '00'
-  const turnoCounts = {}
-  rows.forEach(r => {
-    const t = normTurno(r.turno)
-    turnoCounts[t] = (turnoCounts[t] || 0) + 1
-  })
-  const turno = Object.entries(turnoCounts).sort((a, b) => b[1] - a[1])[0]?.[0] || '--'
-  return { hora: `${parseInt(picoH)}h`, turno }
-}
-
-/* ── Fidelização de Clientes ── */
-function buildFidelizacao(rows, tab) {
-  const novos = rows.filter(r => !r.cliente_retornante).length
-  const retornantes = rows.filter(r => !!r.cliente_retornante).length
-  const total = novos + retornantes
-  const taxa = total > 0 ? Math.round((retornantes / total) * 100) : 0
-
-  // Evolução diária novos vs retornantes
-  const dailyMap = {}
-  rows.forEach(r => {
-    if (!r.data) return
-    if (!dailyMap[r.data]) dailyMap[r.data] = { novos: 0, retornantes: 0 }
-    if (r.cliente_retornante) dailyMap[r.data].retornantes++
-    else dailyMap[r.data].novos++
-  })
-  const evolucao = Object.keys(dailyMap)
-    .sort()
-    .map(d => {
-      const parts = d.split('-')
-      const label = tab === 'hoje' ? d : `${parts[2]}/${parts[1]}`
-      return { dia: label, novos: dailyMap[d].novos, retornantes: dailyMap[d].retornantes }
-    })
-
-  // Clientes mais frequentes (multi-dia)
-  const clientMap = {}
-  rows.forEach(r => {
-    const key = r.numero_cliente || 'desconhecido'
-    if (!clientMap[key]) clientMap[key] = { nome: r.nome_cliente || key, numero: key, dias: new Set(), count: 0, retornante: false }
-    if (r.nome_cliente && clientMap[key].nome === key) clientMap[key].nome = r.nome_cliente
-    if (r.data) clientMap[key].dias.add(r.data)
-    clientMap[key].count++
-    if (r.cliente_retornante) clientMap[key].retornante = true
-  })
-  const frequentes = Object.values(clientMap)
-    .map(c => ({ ...c, diasContato: c.dias.size }))
-    .filter(c => c.diasContato > 1)
-    .sort((a, b) => b.diasContato - a.diasContato || b.count - a.count)
-    .slice(0, 10)
-
-  return { novos, retornantes, taxa, evolucao, frequentes }
-}
-
-/* ── Processamento dos dados ── */
-function processData(rows, _prevRows, tab) {
-  const total = rows.length
-  const reservas = rows.filter(r => r.reserva_solicitada).length
-  const foraHorario = rows.filter(r => r.fora_horario).length
-  const clientesUnicos = new Set(rows.map(r => r.numero_cliente).filter(Boolean)).size
-  const aniversariosUnicos = new Set(rows.filter(r => r.eh_aniversario).map(r => r.numero_cliente).filter(Boolean)).size
-  const reclamacoes = rows.filter(r => normTipo(r.tipo_atendimento) === 'Reclamacao').length
-  const programacaoCount = rows.filter(r => normTipo(r.tipo_atendimento) === 'Programacao').length
-
-  // Satisfação: apenas registros com feedback_empresa preenchido
-  const comFeedback = rows.filter(r => r.feedback_empresa != null && r.feedback_empresa !== '')
-  const positivos = comFeedback.filter(r => normFeedback(r.feedback_empresa) === 'Positivo').length
-  const negativos = comFeedback.filter(r => normFeedback(r.feedback_empresa) === 'Negativo').length
-  const satisfacao = (positivos + negativos) > 0
-    ? Math.round((positivos / (positivos + negativos)) * 100)
-    : null
-  const taxaFeedback = total > 0
-    ? Math.round((comFeedback.length / total) * 100)
-    : 0
-
-  const pico = calcPico(rows)
-  const subLabel =
-    tab === 'hoje' ? 'vs. ontem'
-      : tab === 'semana' ? 'vs. 7 dias anteriores'
-        : 'vs. mês anterior'
-
-  /* ── KPIs extras para aba HOJE ── */
-  const hoje = isoDate(new Date())
-
-  // Reservas de hoje: reserva_solicitada = true E data = hoje
-  // (reserva real = Helena enviou link GetIn)
-  const reservasHoje = rows
-    .filter(r => r.reserva_solicitada && r.data === hoje)
-    .map(r => ({
-      nome_cliente: r.nome_cliente,
-      numero_cliente: r.numero_cliente,
-      hora: r.hora,
-      qtd_pessoas: r.qtd_pessoas,
-      eh_aniversario: r.eh_aniversario,
-      data_reserva_pedida: r.data_reserva_pedida,
-      _raw: r,
-    }))
-
-  // Aniversários hoje: eh_aniversario = true E data = hoje
-  const aniversariosHoje = rows.filter(r => r.eh_aniversario && r.data === hoje).length
-
-  // Feedback negativo hoje: feedback_empresa = 'negativo' E data = hoje
-  const feedbackNegativoHoje = rows.filter(r => {
-    if (!r.feedback_empresa) return false
-    return r.feedback_empresa.trim().toLowerCase().includes('negativ') && r.data === hoje
-  }).length
-
-  // Interesse por programação — ranking de dia_programacao_interesse
-  const progInteresse = {}
-  rows.forEach(r => {
-    if (r.dia_programacao_interesse) {
-      progInteresse[r.dia_programacao_interesse] = (progInteresse[r.dia_programacao_interesse] || 0) + 1
-    }
-  })
-  const progRanking = Object.entries(progInteresse)
-    .sort((a, b) => b[1] - a[1])
-    .map(([dia, count]) => ({ dia, count }))
-  const diaMaisProcurado = progRanking[0] || null
+/**
+ * Assembles the full dashboard data object from raw Supabase rows.
+ * Delegates to four pure-function processors and merges their results.
+ *
+ * @param {object[]} rows      - Rows for the current period.
+ * @param {object[]} prevRows  - Rows for the previous period.
+ * @param {'hoje'|'semana'|'mes'} tab
+ * @returns {object}
+ */
+function processData(rows, prevRows, tab) {
+  const kpiResult   = computeKPIs(rows, prevRows, tab)
+  const chartResult = computeCharts(rows, tab)
+  const tableRows   = computeTableRows(rows)
+  const fidelizacao = computeFidelizacao(rows, tab)
 
   return {
-    kpis: {
-      total:    { value: String(total),        sub: `${clientesUnicos} cliente${clientesUnicos !== 1 ? 's' : ''} único${clientesUnicos !== 1 ? 's' : ''}` },
-      reservas: { value: String(reservas),      sub: 'link GetIn enviado' },
-      fora:     { value: String(foraHorario),   sub: subLabel, sm: true },
-      pico:     { value: pico.hora,              sub: `Turno: ${pico.turno}`, sm: true },
-      aniversarios: { value: String(aniversariosUnicos), sub: 'clientes únicos' },
-      satisfacao: { value: satisfacao != null ? `${satisfacao}%` : '—', sub: `${comFeedback.length} feedbacks (${taxaFeedback}% taxa)` },
-      reclamacoes: { value: String(reclamacoes), sub: subLabel },
-      programacao: { value: String(programacaoCount), sub: diaMaisProcurado ? `Top: ${diaMaisProcurado.dia}` : '—' },
-    },
-    // KPIs extras
-    clientesUnicos,
-    reservasHoje,
-    aniversariosHoje,
-    feedbackNegativoHoje,
-    foraHorarioCount: foraHorario,
-    satisfacao,
-    taxaFeedback,
-    reclamacoes,
-    programacaoCount,
-    progRanking,
-    diaMaisProcurado,
-    linhaLabel:
-      tab === 'hoje' ? 'Hoje — Volume por hora'
-        : tab === 'semana' ? 'Últimos 7 dias — Volume diário'
-          : 'Este mês — Volume semanal',
-    linha: buildLinha(rows, tab),
-    donut: buildDonut(rows),
-    barLabel:
-      tab === 'hoje' ? 'Distribuição por turno'
-        : tab === 'semana' ? 'Almoço/HH x Jantar — 7 dias'
-          : 'Almoço/HH x Jantar — mensal',
-    barras: buildBarras(rows, tab),
-    tableRows: buildRows(rows),
+    // KPIs
+    kpis:                 kpiResult.kpis,
+    clientesUnicos:       kpiResult.clientesUnicos,
+    reservasHoje:         kpiResult.reservasHoje,
+    aniversariosHoje:     kpiResult.aniversariosHoje,
+    feedbackNegativoHoje: kpiResult.feedbackNegativoHoje,
+    foraHorarioCount:     kpiResult.foraHorarioCount,
+    satisfacao:           kpiResult.satisfacao,
+    taxaFeedback:         kpiResult.taxaFeedback,
+    reclamacoes:          kpiResult.reclamacoes,
+    programacaoCount:     kpiResult.programacaoCount,
+    progRanking:          kpiResult.progRanking,
+    diaMaisProcurado:     kpiResult.diaMaisProcurado,
+    // Charts
+    linha:      chartResult.linha,
+    linhaLabel: chartResult.linhaLabel,
+    donut:      chartResult.donut,
+    barras:     chartResult.barras,
+    barLabel:   chartResult.barLabel,
+    // Table
+    tableRows,
     rawRows: rows,
-    /* ── Fidelização de Clientes ── */
-    fidelizacao: buildFidelizacao(rows, tab),
-
-    hasRealData: total > 0,
+    // Fidelization
+    fidelizacao,
+    // Meta
+    hasRealData: rows.length > 0,
     supabaseOk: true,
   }
 }

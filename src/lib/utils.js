@@ -48,5 +48,7 @@ const TURNO_LABEL = {
 export function normTurno(t) {
   if (!t) return 'Jantar'
   const key = stripAccents(t.trim().toLowerCase())
-  return TURNO_LABEL[key] || 'Jantar'
+  const label = TURNO_LABEL[key]
+  if (!label) console.warn('[normTurno] Turno desconhecido:', t)
+  return label || 'Jantar'
 }
