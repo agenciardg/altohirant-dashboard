@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, useCallback } from 'react'
+import { useEffect, useRef, useState, useCallback, useMemo } from 'react'
 import { normTipo, normFeedback, normTurno, isDiurno } from './lib/utils'
 import { TipoBadge, StBadge, TurnoBadge } from './components/Badges'
 import { DIAS_ABREV } from './lib/constants'
@@ -714,7 +714,10 @@ function ContentRegistro({ row }) {
 function ContentConversa({ row }) {
   const [mensagens, setMensagens] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [busca, setBusca] = useState('')
+  const [matchIdx, setMatchIdx] = useState(0)
   const scrollRef = useRef(null)
+  const matchRefs = useRef([])
 
   useEffect(() => {
     if (!row?.id) { setLoading(false); return }
@@ -741,6 +744,29 @@ function ContentConversa({ row }) {
     }
   }, [mensagens])
 
+  // Contar matches e resetar índice quando busca muda
+  const matchCount = useMemo(() => {
+    if (!busca.trim() || !mensagens) return 0
+    const term = busca.toLowerCase()
+    return mensagens.filter(m => (m.conteudo || '').toLowerCase().includes(term)).length
+  }, [busca, mensagens])
+
+  useEffect(() => { setMatchIdx(0) }, [busca])
+
+  // Scroll até o match atual
+  useEffect(() => {
+    if (matchCount > 0 && matchRefs.current[matchIdx]) {
+      matchRefs.current[matchIdx].scrollIntoView({ behavior: 'smooth', block: 'center' })
+    }
+  }, [matchIdx, matchCount, busca])
+
+  const handleSearchKey = (e) => {
+    if (e.key === 'Enter' && matchCount > 0) {
+      e.preventDefault()
+      setMatchIdx(prev => (prev + 1) % matchCount)
+    }
+  }
+
   if (!row) return <div className="mempty">Sem dados</div>
 
   const fmtH = (h) => {
@@ -758,10 +784,28 @@ function ContentConversa({ row }) {
     return <span className="chat-tipo-badge">[{labels[tipo] || tipo}]</span>
   }
 
+  // Highlight helper: destaca termo buscado no texto
+  const highlightText = (text, refIndex) => {
+    if (!busca.trim() || !text) return text
+    const term = busca.toLowerCase()
+    const idx = text.toLowerCase().indexOf(term)
+    if (idx === -1) return text
+    return (
+      <span ref={el => { matchRefs.current[refIndex] = el }}>
+        {text.slice(0, idx)}
+        <mark className="chat-search-highlight">{text.slice(idx, idx + busca.length)}</mark>
+        {text.slice(idx + busca.length)}
+      </span>
+    )
+  }
+
+  // Índice de matches para ref tracking
+  let refCounter = 0
+
   return (
     <div className="conversa-container">
-      {/* Cabeçalho do atendimento */}
-      <div className="conversa-header">
+      {/* Cabeçalho compacto — tudo em uma linha */}
+      <div className="conversa-header conversa-header-compact">
         <div className="conversa-header-row">
           <div className="conversa-field">
             <span className="conversa-label">Cliente</span>
@@ -775,8 +819,6 @@ function ContentConversa({ row }) {
             <span className="conversa-label">Hora</span>
             <span className="conversa-value">{fmt(row.hora)}</span>
           </div>
-        </div>
-        <div className="conversa-header-row">
           <div className="conversa-field">
             <span className="conversa-label">Turno</span>
             <span className="conversa-value">{row.turno ? normTurno(row.turno) : '—'}</span>
@@ -789,11 +831,35 @@ function ContentConversa({ row }) {
             <span className="conversa-label">Feedback</span>
             <span className="conversa-value"><StBadge st={normFeedback(row.feedback_empresa)} /></span>
           </div>
+          {/* Pesquisa inline */}
+          <div className="conversa-search-inline">
+            <svg className="conversa-search-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+            </svg>
+            <input
+              className="conversa-search-input"
+              type="text"
+              placeholder="Pesquisar..."
+              value={busca}
+              onChange={e => setBusca(e.target.value)}
+              onKeyDown={handleSearchKey}
+            />
+            {busca.trim() && (
+              <span className="conversa-search-count">
+                {matchCount > 0 ? `${matchIdx + 1}/${matchCount}` : '0'}
+              </span>
+            )}
+            {busca.trim() && matchCount > 1 && (
+              <div className="conversa-search-nav">
+                <button onClick={() => setMatchIdx(p => (p - 1 + matchCount) % matchCount)} className="conversa-search-nav-btn" title="Anterior">▲</button>
+                <button onClick={() => setMatchIdx(p => (p + 1) % matchCount)} className="conversa-search-nav-btn" title="Próximo">▼</button>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
       {/* Área de chat */}
-      <div className="conversa-chat-title">Conversa</div>
       <div className="conversa-chat" ref={scrollRef}>
         {loading ? (
           <div className="mempty">Carregando mensagens...</div>
@@ -802,15 +868,18 @@ function ContentConversa({ row }) {
         ) : (
           mensagens.map((m, i) => {
             const isHelena = m.remetente === 'helena'
+            const text = m.conteudo || ''
+            const isMatch = busca.trim() && text.toLowerCase().includes(busca.toLowerCase())
+            const currentRefIdx = isMatch ? refCounter++ : -1
             return (
-              <div key={m.id || i} className={`chat-bubble ${isHelena ? 'chat-helena' : 'chat-cliente'}`}>
+              <div key={m.id || i} className={`chat-bubble ${isHelena ? 'chat-helena' : 'chat-cliente'}${isMatch && currentRefIdx === matchIdx ? ' chat-bubble-active' : ''}`}>
                 <div className="chat-bubble-header">
                   <span className="chat-sender">{isHelena ? 'Helena' : 'Cliente'}</span>
                   <span className="chat-time">{fmtH(m.hora)}</span>
                 </div>
                 <div className="chat-content">
                   {tipoBadge(m.tipo_mensagem)}
-                  {m.conteudo || ''}
+                  {isMatch ? highlightText(text, currentRefIdx) : text}
                 </div>
                 {isHelena && m.tools_usadas && (
                   <div className="chat-tools">Tools: {m.tools_usadas}</div>
@@ -1020,21 +1089,19 @@ export function Modal({ state, onClose, rawRows }) {
 
         <div className="modal-hdr">
           <div className="modal-hdr-l">
+            {showConversa && (
+              <button className="conversa-back" onClick={() => setConversaRow(null)} title="Voltar">←</button>
+            )}
             <span className="modal-ico">{entry.icon}</span>
             <div>
               <div className="modal-title">{entry.title}</div>
-              <div className="modal-sub">{subtitle}</div>
+              {!showConversa && <div className="modal-sub">{subtitle}</div>}
             </div>
           </div>
           <button className="modal-close" onClick={onClose} aria-label="Fechar">✕</button>
         </div>
 
         <div className="modal-body" ref={bodyRef}>
-          {showConversa && (
-            <button className="conversa-back" onClick={() => setConversaRow(null)}>
-              ← Voltar
-            </button>
-          )}
           <Component {...contentProps} onClickRow={showConversa ? undefined : setConversaRow} />
         </div>
 

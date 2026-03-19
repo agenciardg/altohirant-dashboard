@@ -27,16 +27,16 @@
   border-radius:20px 20px 0 0;
 }
 .modal-hdr {
-  display:flex; align-items:flex-start; justify-content:space-between;
-  padding:20px 22px 16px; gap:12px;
+  display:flex; align-items:center; justify-content:space-between;
+  padding:10px 22px; gap:12px;
   border-bottom:1px solid var(--border);
   flex-shrink:0;
   background:var(--card-grad, var(--card));
 }
-.modal-hdr-l { display:flex; align-items:center; gap:13px; }
-.modal-ico { font-size:22px; line-height:1; flex-shrink:0; }
-.modal-title { font-family:'Playfair Display',serif; font-weight:700; font-size:16px; color:var(--t1); }
-.modal-sub { font-size:10px; font-weight:600; letter-spacing:.12em; text-transform:uppercase; color:var(--t2); margin-top:3px; }
+.modal-hdr-l { display:flex; align-items:center; gap:10px; }
+.modal-ico { font-size:18px; line-height:1; flex-shrink:0; }
+.modal-title { font-family:'Playfair Display',serif; font-weight:700; font-size:14px; color:var(--t1); }
+.modal-sub { font-size:9px; font-weight:600; letter-spacing:.1em; text-transform:uppercase; color:var(--t2); margin-top:1px; }
 .modal-close {
   flex-shrink:0; width:28px; height:28px; border-radius:50%; border:none;
   background:rgba(255,255,255,0.06); color:var(--t2); cursor:pointer;
@@ -180,11 +180,12 @@
 /* ══ CONVERSA / HISTÓRICO DE MENSAGENS ════════════════════════════════════════ */
 .conversa-back {
   background:none; border:none; color:var(--t2); cursor:pointer;
-  font-size:12px; font-weight:600; padding:0 0 10px;
-  display:flex; align-items:center; gap:4px;
-  transition:color .18s; flex-shrink:0;
+  font-size:16px; font-weight:600; padding:4px 6px;
+  display:flex; align-items:center; justify-content:center;
+  transition:color .18s, background .18s; flex-shrink:0;
+  border-radius:6px; line-height:1;
 }
-.conversa-back:hover { color:#E85D04; }
+.conversa-back:hover { color:#E85D04; background:rgba(232,93,4,0.1); }
 
 .conversa-container {
   display:flex; flex-direction:column; flex:1; min-height:0; overflow:hidden;
@@ -197,8 +198,17 @@
   background:rgba(255,255,255,0.03);
   border:1px solid var(--border);
   border-radius:12px;
-  margin-bottom:16px;
+  margin-bottom:8px;
 }
+.conversa-header-compact {
+  padding:7px 12px; gap:0; margin-bottom:4px; border-radius:8px;
+}
+.conversa-header-compact .conversa-header-row {
+  display:flex; gap:14px; flex-wrap:wrap; align-items:center;
+}
+.conversa-header-compact .conversa-field { flex-direction:row; gap:4px; align-items:center; }
+.conversa-header-compact .conversa-label { font-size:8px; margin:0; }
+.conversa-header-compact .conversa-value { font-size:11px; }
 .conversa-header-row {
   display:flex; gap:20px; flex-wrap:wrap;
 }
@@ -209,11 +219,42 @@
 }
 .conversa-value { font-size:13px; font-weight:600; color:var(--t1); }
 
-.conversa-chat-title {
-  font-size:10px; font-weight:700; letter-spacing:.13em; text-transform:uppercase;
-  color:var(--t2); margin:0 0 10px;
-  padding-bottom:8px; border-bottom:1px solid var(--border);
-  flex-shrink:0;
+/* Pesquisa inline no cabeçalho */
+.conversa-search-inline {
+  display:flex; align-items:center; gap:4px;
+  margin-left:auto;
+  padding:3px 8px;
+  background:rgba(255,255,255,0.05);
+  border:1px solid var(--border);
+  border-radius:6px;
+  min-width:90px; max-width:180px;
+}
+.conversa-search-icon { color:var(--t3); flex-shrink:0; }
+.conversa-search-input {
+  flex:1; background:none; border:none; outline:none;
+  font-size:11px; color:var(--t1); font-family:inherit;
+  min-width:0;
+}
+.conversa-search-input::placeholder { color:var(--t3); }
+.conversa-search-count {
+  font-size:9px; font-weight:600; color:var(--t3); white-space:nowrap;
+}
+.conversa-search-nav { display:flex; gap:1px; }
+.conversa-search-nav-btn {
+  background:none; border:none; color:var(--t3); cursor:pointer;
+  font-size:9px; padding:1px 3px; border-radius:3px;
+  transition:color .15s, background .15s; line-height:1;
+}
+.conversa-search-nav-btn:hover { color:#E85D04; background:rgba(232,93,4,0.1); }
+
+/* Highlight de busca */
+.chat-search-highlight {
+  background:rgba(249,115,22,0.35); color:#fff;
+  border-radius:2px; padding:0 1px;
+}
+.chat-bubble-active {
+  outline:1.5px solid rgba(249,115,22,0.5);
+  outline-offset:2px;
 }
 
 .conversa-chat {
