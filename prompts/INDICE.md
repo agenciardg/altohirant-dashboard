@@ -1,6 +1,6 @@
 # Indice de Prompts — Dashboard Alto da Hirant
 
-> Ultima atualizacao: 2026-03-19
+> Ultima atualizacao: 2026-03-21
 
 ---
 
@@ -59,6 +59,13 @@
 - **Prompts:** 11 (Fase 0: 4 prompts, Fase 1: 3 prompts, Fase 2: 3 prompts, Fase 3: 1 prompt)
 - **Ordem:** Sequencial obrigatoria — Fase 0 → 1 → 2 → 3
 - **Origem:** Analise conjunta de 3 agentes (frontend-developer, ui-ux-designer, architect-reviewer)
+
+### 08-auth-login-transicao-header-buttons.md
+- **Status:** IMPLEMENTADO / TEMPLATE REUTILIZAVEL (2026-03-21)
+- **O que faz:** Sistema completo de autenticacao Supabase Auth, tela de login premium (ghost card, logo hero, toggle senha, animacoes staggered), transicoes animadas login↔dashboard (overlay branded com pre-load, sem clarao, sem oscilacao), botoes padronizados no header (.hdr-pill), alterar senha inline, criacao de usuario via SQL
+- **Modulos:** 7 (useAuth hook, LoginPage, AuthGate+transicoes, header pills, ChangePassword, main.jsx, Supabase user SQL)
+- **Reutilizavel:** Sim — prompt generico adaptavel para qualquer dashboard React+Supabase. Checklist de adaptacao incluso (cores, fontes, textos, logo)
+- **Origem:** Implementacao validada no dashboard Alto da Hirant
 
 ---
 
