@@ -29,7 +29,7 @@ function FeedbackBadge({ fb }) {
   const n = normFeedback(fb)
   if (n == null) return (
     <span style={{
-      padding: '0.2rem 0.6rem', borderRadius: 4, fontSize: '0.8rem', fontWeight: 600,
+      padding: '3px 10px', borderRadius: 4, fontSize: 13, fontWeight: 600,
       background: 'rgba(150, 150, 150, 0.08)', color: 'var(--t3)', opacity: 0.6,
     }}>
       Sem feedback
@@ -43,9 +43,9 @@ function FeedbackBadge({ fb }) {
   const s = styles[n] || styles.Neutro
   return (
     <span style={{
-      padding: '0.2rem 0.6rem',
+      padding: '3px 10px',
       borderRadius: 4,
-      fontSize: '0.8rem',
+      fontSize: 13,
       fontWeight: 600,
       background: s.bg,
       color: s.color,
@@ -59,31 +59,34 @@ function DetailPanelInner({ item, onClose, onOpenConversa }) {
   if (!item) {
     return (
       <div className="detail-panel detail-panel--empty" style={{
-        width: 380,
+        width: '100%',
+        flex: 1,
         background: 'var(--card)',
         border: '1px dashed var(--border)',
         borderRadius: 16,
         transition: 'background 0.35s, border-color 0.35s',
         opacity: 0.7,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
       }}>
         <div style={{
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
           justifyContent: 'center',
-          minHeight: 120,
           color: 'var(--t3)',
           textAlign: 'center',
-          padding: '1.5rem 2rem',
-          gap: '0.4rem',
+          padding: '20px 28px',
+          gap: 6,
         }}>
           <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--t3)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ opacity: 0.5, marginBottom: 4 }}>
             <rect x="3" y="3" width="18" height="18" rx="2" />
             <line x1="9" y1="9" x2="15" y2="9" />
             <line x1="9" y1="13" x2="13" y2="13" />
           </svg>
-          <div style={{ fontSize: '0.85rem', fontWeight: 600 }}>Selecione uma reserva para ver os detalhes</div>
-          <div style={{ fontSize: '0.72rem', opacity: 0.7 }}>Clique em qualquer item da lista de reservas</div>
+          <div style={{ fontSize: 14, fontWeight: 600 }}>Selecione uma reserva para ver os detalhes</div>
+          <div style={{ fontSize: 11, opacity: 0.7 }}>Clique em qualquer item da lista de reservas</div>
         </div>
       </div>
     )
@@ -91,7 +94,7 @@ function DetailPanelInner({ item, onClose, onOpenConversa }) {
 
   return (
     <div className="detail-panel" style={{
-      width: 380,
+      width: '100%',
       background: 'var(--card)',
       border: '1px solid var(--border)',
       borderRadius: 16,
@@ -99,18 +102,18 @@ function DetailPanelInner({ item, onClose, onOpenConversa }) {
       transition: 'transform 0.2s ease-out, background 0.35s, border-color 0.35s',
       boxShadow: 'var(--card-glow, none)',
     }}>
-        <div style={{ padding: '1.25rem' }}>
+        <div style={{ padding: 16 }}>
           {/* Header */}
           <div style={{
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',
-            marginBottom: '1.25rem',
-            paddingBottom: '0.75rem',
+            marginBottom: 16,
+            paddingBottom: 10,
             borderBottom: '1px solid var(--border)',
           }}>
             <div style={{
-              fontSize: '1.05rem',
+              fontSize: 17,
               fontWeight: 700,
               color: 'var(--t1)',
             }}>
@@ -121,8 +124,8 @@ function DetailPanelInner({ item, onClose, onOpenConversa }) {
               border: 'none',
               color: 'var(--t2)',
               cursor: 'pointer',
-              fontSize: '1.1rem',
-              padding: '0.25rem',
+              fontSize: 18,
+              padding: 4,
               lineHeight: 1,
             }}>✕</button>
           </div>
@@ -131,8 +134,8 @@ function DetailPanelInner({ item, onClose, onOpenConversa }) {
           <div style={{
             display: 'grid',
             gridTemplateColumns: '1fr 1fr',
-            gap: '1rem',
-            marginBottom: '1.25rem',
+            gap: 12,
+            marginBottom: 16,
           }}>
             <Field label="TELEFONE" value={item.numero_cliente || '--'} />
             <Field label="DATA" value={fmtData(item.data)} />
@@ -150,27 +153,27 @@ function DetailPanelInner({ item, onClose, onOpenConversa }) {
               background: 'rgba(232, 160, 32, 0.08)',
               border: '1px solid rgba(232, 160, 32, 0.2)',
               borderRadius: 8,
-              padding: '0.75rem 1rem',
-              marginBottom: '1rem',
+              padding: '10px 14px',
+              marginBottom: 12,
             }}>
               <div style={{
-                fontSize: '0.75rem',
+                fontSize: 12,
                 fontWeight: 700,
                 textTransform: 'uppercase',
                 letterSpacing: '0.08em',
                 color: '#e8a020',
-                marginBottom: '0.4rem',
+                marginBottom: 6,
               }}>
                 🎂 Aniversário
               </div>
               <div style={{
-                fontSize: '0.85rem',
+                fontSize: 14,
                 color: 'var(--t1)',
               }}>
                 {cortesiaAniversario(item.qtd_pessoas)}
               </div>
               {item.qtd_pessoas != null && (
-                <div style={{ fontSize: '0.75rem', color: 'var(--t2)', marginTop: '0.25rem' }}>
+                <div style={{ fontSize: 12, color: 'var(--t2)', marginTop: 4 }}>
                   Grupo de {item.qtd_pessoas} pessoa{item.qtd_pessoas !== 1 ? 's' : ''}
                 </div>
               )}
@@ -179,19 +182,19 @@ function DetailPanelInner({ item, onClose, onOpenConversa }) {
 
           {/* Qtd pessoas (quando não é aniversário) */}
           {!item.eh_aniversario && item.qtd_pessoas != null && (
-            <div style={{ marginBottom: '0.75rem' }}>
+            <div style={{ marginBottom: 10 }}>
               <Field label="PESSOAS NO GRUPO" value={`${item.qtd_pessoas} pessoa${item.qtd_pessoas !== 1 ? 's' : ''}`} />
             </div>
           )}
 
           {/* Feedback */}
-          <div style={{ marginBottom: '0.75rem' }}>
+          <div style={{ marginBottom: 10 }}>
             <div style={{
-              fontSize: '0.7rem',
+              fontSize: 11,
               textTransform: 'uppercase',
               letterSpacing: '0.08em',
               color: 'var(--t3)',
-              marginBottom: '0.3rem',
+              marginBottom: 5,
             }}>
               FEEDBACK
             </div>
@@ -205,9 +208,9 @@ function DetailPanelInner({ item, onClose, onOpenConversa }) {
           <div style={{
             display: 'grid',
             gridTemplateColumns: '1fr 1fr',
-            gap: '0.75rem',
-            marginTop: '0.75rem',
-            paddingTop: '0.75rem',
+            gap: 10,
+            marginTop: 10,
+            paddingTop: 10,
             borderTop: '1px solid var(--border)',
           }}>
             {item.tempo_resposta_ms != null && (
@@ -222,7 +225,7 @@ function DetailPanelInner({ item, onClose, onOpenConversa }) {
 
           {/* Data reserva pedida — só destaca se é reserva real */}
           {item.data_reserva_pedida && (
-            <div style={{ marginTop: '0.75rem' }}>
+            <div style={{ marginTop: 10 }}>
               {item.reserva_solicitada
                 ? <Field label="RESERVA PARA" value={fmtData(item.data_reserva_pedida)} highlight />
                 : <Field label="DATA MENCIONADA" value={fmtData(item.data_reserva_pedida)} />
@@ -235,15 +238,15 @@ function DetailPanelInner({ item, onClose, onOpenConversa }) {
             <button
               onClick={() => onOpenConversa(item)}
               style={{
-                marginTop: '1rem',
+                marginTop: 14,
                 width: '100%',
-                padding: '0.6rem 1rem',
+                padding: '8px 14px',
                 background: 'rgba(232,93,4,0.12)',
                 border: '1px solid rgba(232,93,4,0.3)',
                 borderRadius: 8,
                 color: '#F97316',
                 fontWeight: 700,
-                fontSize: '0.8rem',
+                fontSize: 13,
                 letterSpacing: '0.05em',
                 cursor: 'pointer',
                 transition: 'background .18s, border-color .18s',
@@ -263,16 +266,16 @@ function Field({ label, value, children, highlight }) {
   return (
     <div>
       <div style={{
-        fontSize: '0.7rem',
+        fontSize: 11,
         textTransform: 'uppercase',
         letterSpacing: '0.08em',
         color: 'var(--t3)',
-        marginBottom: '0.2rem',
+        marginBottom: 3,
       }}>
         {label}
       </div>
       <div style={{
-        fontSize: '0.95rem',
+        fontSize: 15,
         color: highlight ? '#e8a020' : 'var(--t1)',
         fontWeight: highlight ? 600 : 500,
       }}>

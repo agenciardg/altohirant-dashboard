@@ -114,31 +114,31 @@ function TurnoAtualInner() {
     <div className="turno-atual-card" style={{
       background: 'var(--card)',
       borderRadius: 12,
-      padding: '1rem 1.25rem',
+      padding: '12px 16px',
       maxWidth: 380,
       border: '1px solid var(--border)',
       boxShadow: 'var(--card-glow, none)',
       transition: 'background 0.35s, border-color 0.35s',
     }}>
       <div style={{
-        fontSize: '0.7rem',
+        fontSize: 11,
         textTransform: 'uppercase',
         letterSpacing: '0.12em',
         fontWeight: 600,
         color: 'var(--t3)',
-        marginBottom: '0.5rem',
+        marginBottom: 6,
       }}>
         Turno Atual
       </div>
       <div style={{
         display: 'flex',
         alignItems: 'center',
-        gap: '0.5rem',
-        marginBottom: '0.35rem',
+        gap: 8,
+        marginBottom: 5,
       }}>
-        <span style={{ fontSize: '1.3rem' }}>{turno.icone}</span>
+        <span style={{ fontSize: 21 }}>{turno.icone}</span>
         <span style={{
-          fontSize: '1.1rem',
+          fontSize: 18,
           fontWeight: 700,
           color: turno.ativo ? '#e8a020' : 'var(--t2)',
         }}>
@@ -147,7 +147,7 @@ function TurnoAtualInner() {
       </div>
       <div style={{
         fontFamily: 'monospace',
-        fontSize: '0.85rem',
+        fontSize: 14,
         color: 'var(--t2)',
       }}>
         {turno.countdown}

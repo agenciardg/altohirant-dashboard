@@ -1,23 +1,139 @@
 /* ── Responsive ── */
+
+/* ── Tablet (≤1000px) ── */
 @media(max-width:1000px){
   .g4{grid-template-columns:repeat(2,1fr)}
   .g21,.g11{grid-template-columns:1fr}
   .dashboard-hoje{grid-template-columns:1fr}
   .dashboard-hoje__sidebar{position:static;flex-direction:row;flex-wrap:wrap}
-  .dashboard-hoje__sidebar .detail-panel{width:100%}
+  .dashboard-hoje__sidebar .detail-panel,
+  .dashboard-hoje__sidebar .detail-panel--empty{width:100%;flex:none}
+  .dashboard-hoje__sidebar .turno-atual-card{width:100%;max-width:none}
   .metricas-compactas{grid-template-columns:repeat(2,1fr)}
+  .dash{padding:0 16px 16px}
+  .hdr-i{padding:10px 16px}
 }
+
+/* ── Mobile (≤600px) ── */
 @media(max-width:600px){
-  .g4{grid-template-columns:1fr 1fr}
-  .hdr-i{flex-wrap:wrap;gap:10px}
-  .kval{font-size:34px}
-  .b-name{font-size:16px}
-  .modal-backdrop{padding:12px}
-  .modal-box{max-width:100%;max-height:90vh}
+  /* Header */
+  .hdr-i{flex-wrap:wrap;gap:8px;padding:8px 12px}
+  .brand{gap:10px}
+  .b-name{font-size:14px}
+  .b-tag{font-size:8px;letter-spacing:.18em}
+  .logo-img{width:36px;height:36px}
+  .clk-brand{font-size:18px;padding-left:8px;margin-left:2px}
+  .hdr-r{gap:8px}
+  .hdr-pill{width:42px;height:26px;border-radius:13px}
+  .hdr-pill--icon{width:32px}
+  .tog-th{width:17px;height:17px;top:3.5px;font-size:8px}
+  html[data-theme="dark"] .tog-th{transform:translateX(3px)}
+  html[data-theme="light"] .tog-th{transform:translateX(21px)}
+  .agt,.date,.clk{font-size:10px}
+  .settings-dropdown{min-width:260px;right:-8px}
+
+  /* Layout */
+  .dash{padding:0 10px 14px}
+  .g4{grid-template-columns:1fr 1fr;gap:6px;margin-top:6px}
+  .g4+.g4{margin-top:6px}
+  .g21,.g11{gap:6px;margin-top:6px}
+
+  /* KPI cards */
+  .cb{padding:10px 12px}
+  .kval{font-size:24px}
+  .kval.sm{font-size:20px}
+  .klbl{font-size:8px;gap:4px}
+  .kico{font-size:11px}
+  .ksub{font-size:9px}
+
+  /* Charts */
+  .ch{padding:8px 12px 0}
+  .ct{font-size:12px}
+  .cbdy{padding:4px 10px 8px}
+
+  /* Dashboard hoje */
+  .dashboard-hoje{gap:6px;margin-top:6px}
+  .dashboard-hoje__main{gap:6px}
+  .dashboard-hoje__sidebar{gap:6px}
+
+  /* Reservas */
+  .reservas-hoje-card{border-radius:12px}
+  .reservas-hoje-header{padding:10px 12px 8px}
+  .reservas-hoje-title{font-size:14px}
+  .reservas-hoje-item{padding:6px 12px;gap:10px}
+  .reservas-hoje-hora{font-size:14px;min-width:42px}
+  .reservas-hoje-nome{font-size:13px}
+
+  /* Métricas compactas */
+  .metricas-compactas{grid-template-columns:1fr 1fr;gap:6px;padding:6px 0}
+  .metrica-mini{padding:10px 12px;border-radius:6px}
+  .metrica-mini__label{font-size:9px}
+  .metrica-mini__valor{font-size:18px}
+
+  /* Tabs */
+  .tabs-w{padding:10px 0 0}
+  .tabs-bar{padding:6px 0 0;gap:8px;flex-wrap:wrap}
+  .tab{padding:5px 12px;font-size:10px}
+
+  /* Day selector — horizontal scroll */
+  .day-selector-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+  .day-selector{width:max-content}
+  .day-pill{padding:5px 10px;font-size:9px}
+
+  /* Bar legend */
+  .bleg{flex-wrap:wrap;gap:6px}
+  .bli{padding:4px 8px;font-size:9px}
+
+  /* Table */
+  thead th{padding:5px 8px;font-size:8px}
+  tbody td{padding:4px 8px;font-size:10px}
+  .tscr{max-height:180px}
+
+  /* KPI strip */
+  .kpi-strip{padding:8px 12px;gap:12px}
+  .kpi-strip__item:not(:last-child){padding-right:12px}
+  .kpi-strip__val{font-size:14px}
+
+  /* Filter chips */
+  .fchips{margin-top:8px;gap:6px}
+
+  /* Modal */
+  .modal-backdrop{padding:8px}
+  .modal-box{max-width:100%;max-height:92vh;border-radius:14px}
+  .modal-hdr{padding:8px 14px}
+  .modal-body{padding:12px 14px 0}
+  .modal-title{font-size:13px}
+  .mstats{flex-wrap:wrap}
+  .mstat{min-width:calc(50% - 1px);padding:10px 8px}
+  .mstat-val{font-size:22px}
   .mrow{flex-direction:column;gap:6px}
   .mrow-badges{max-width:none;justify-content:flex-start}
   .mreg-grid{grid-template-columns:1fr}
-  .mstats{flex-wrap:wrap}
-  .mstat{min-width:calc(50% - 1px)}
-  .metricas-compactas{grid-template-columns:1fr 1fr}
+
+  /* Footer */
+  .ftr{margin-top:8px;padding:8px 0}
+  .fb{font-size:10px}
+
+  /* Mini calendar */
+  .mini-cal{min-width:240px;padding:10px 12px}
+}
+
+/* ── Small phones (≤400px) ── */
+@media(max-width:400px){
+  .hdr-i{padding:6px 8px}
+  .dash{padding:0 8px 12px}
+  .brand{gap:8px}
+  .b-name{font-size:12px}
+  .logo-img{width:32px;height:32px}
+  .clk-brand{font-size:16px}
+  .hdr-r{gap:6px}
+  .g4{gap:4px;margin-top:4px}
+  .g4+.g4{margin-top:4px}
+  .kval{font-size:22px}
+  .kval.sm{font-size:18px}
+  .cb{padding:8px 10px}
+  .settings-dropdown{min-width:calc(100vw - 24px);right:-12px}
+  .modal-backdrop{padding:4px}
+  .modal-box{border-radius:10px}
+  .chat-bubble{max-width:90%;font-size:12px;padding:8px 12px}
 }

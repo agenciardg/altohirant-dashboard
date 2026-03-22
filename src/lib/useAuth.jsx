@@ -13,11 +13,25 @@ export function useAuth() {
   useEffect(() => {
     let mounted = true
 
-    // Hydrate from the existing browser session on first render
-    supabase.auth.getSession().then(({ data: { session: existingSession } }) => {
+    // Validate session with server (not just localStorage) to prevent bypass
+    supabase.auth.getUser().then(({ data: { user: validatedUser }, error }) => {
       if (!mounted) return
-      setSession(existingSession)
-      setUser(existingSession?.user ?? null)
+      if (error || !validatedUser) {
+        setSession(null)
+        setUser(null)
+        setLoading(false)
+        return
+      }
+      return supabase.auth.getSession().then(({ data: { session: existingSession } }) => {
+        if (!mounted) return
+        setSession(existingSession)
+        setUser(validatedUser)
+        setLoading(false)
+      })
+    }).catch(() => {
+      if (!mounted) return
+      setSession(null)
+      setUser(null)
       setLoading(false)
     })
 

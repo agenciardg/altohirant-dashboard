@@ -35,7 +35,7 @@ function ReservasHojeInner({ reservas, onSelectReserva }) {
 
       {items.length === 0 ? (
         <div className="reservas-hoje-empty">
-          <span style={{ fontSize: '1.5rem' }}>✓</span>
+          <span style={{ fontSize: 24 }}>✓</span>
           <span>Sem reservas para hoje</span>
         </div>
       ) : (

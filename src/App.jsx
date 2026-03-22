@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { useDashboardData } from './lib/useDashboardData'
-import { useLogoConfig } from './lib/useConfig'
+
 import { useClock } from './lib/useClock'
 import { MOCK } from './lib/mockData'
 import { TABS } from './lib/constants'
@@ -22,7 +22,7 @@ import {
 } from './context/DashboardFilterContext'
 
 /* ── Componentes ── */
-import { FlameLogo } from './components/FlameLogo'
+
 import { KPICard } from './components/KPICard'
 import { CardLinha } from './components/cards/CardLinha'
 import { CardDonut } from './components/cards/CardDonut'
@@ -65,8 +65,6 @@ export default function App() {
     return () => document.removeEventListener('mousedown', handleClick)
   }, [settingsOpen])
 
-  const { logoSrc, updateLogo, removeLogo: removeLogoConfig } = useLogoConfig()
-  const fileRef = useRef(null)
   const clock = useClock()
 
   const { loading, data: realData } = useDashboardData(tab)
@@ -77,20 +75,6 @@ export default function App() {
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme)
   }, [theme])
-
-  const handleLogoFile = useCallback((e) => {
-    const file = e.target.files?.[0]
-    if (!file) return
-    const reader = new FileReader()
-    reader.onload = ev => updateLogo(ev.target.result)
-    reader.readAsDataURL(file)
-    e.target.value = ''
-  }, [updateLogo])
-
-  const removeLogo = useCallback((ev) => {
-    ev.stopPropagation()
-    removeLogoConfig()
-  }, [removeLogoConfig])
 
   const supabaseOk = !!(realData?.supabaseOk)
   const d = supabaseOk ? realData : MOCK[tab]
@@ -294,15 +278,9 @@ export default function App() {
       <header className="hdr">
         <div className="hdr-i">
           <div className="brand">
-            <div className="logo-wrap" onClick={() => fileRef.current?.click()}>
-              {logoSrc ? <img src={logoSrc} className="logo-img" alt="Logo" /> : <FlameLogo size={46} />}
-              <div className="logo-ov">
-                <span className="logo-ov-icon">📷</span>
-                <span className="logo-ov-txt">Alterar</span>
-              </div>
-              {logoSrc && <button className="logo-reset" onClick={removeLogo} title="Remover foto">×</button>}
+            <div className="logo-wrap">
+              <img src="/logo.png" className="logo-img" alt="Alto da Hirant" />
             </div>
-            <input ref={fileRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handleLogoFile} />
             <div>
               <div className="b-name">Alto da Hirant</div>
               <div className="b-tag">Churrasco &amp; Cia</div>
@@ -379,7 +357,7 @@ export default function App() {
         <div className="tab-panels">
           <div className={`tab-panel${isHoje ? '' : ' tab-panel--hidden'}`}>
             {/* KPIs completos — 4 cards */}
-            <div className="g4" style={{ marginTop: 12 }}>
+            <div className="g4">
               <KPICard icon="💬" label="Atendimentos" loading={loading}
                 value={d.kpis.total.value} sub={d.kpis.total.sub}
                 ak={tab + 't'} delta={d.kpis.total.delta} deltaInvert={false}
@@ -403,7 +381,7 @@ export default function App() {
             </div>
 
             {/* KPIs — linha 2 */}
-            <div className="g4" style={{ marginTop: 0 }}>
+            <div className="g4">
               <KPICard icon="👤" label="Clientes Únicos" loading={loading}
                 value={String(d.clientesUnicos || 0)} sub={d.kpis.total.sub}
                 ak={tab + 'u'} delta={d.kpis.clientes?.delta} deltaInvert={d.kpis.clientes?.deltaInvert ?? false}
@@ -541,7 +519,7 @@ export default function App() {
                   />
                 </div>
                 {/* KPIs — linha 2 */}
-                <div className="g4" style={{ marginTop: 0 }}>
+                <div className="g4">
                   <KPICard icon="⭐" label="Satisfação" loading={loading}
                     value={kpis.satisfacao?.value || '—'} sub={kpis.satisfacao?.sub || '—'}
                     ak={tab + 's'}
@@ -586,7 +564,10 @@ export default function App() {
                 loading={loading}
                 hasRealData={hasRealData}
                 activeDay={activeDay}
-                setActiveDay={tab === 'mes' ? handleLineDayClick : (day) => dispatch(setActiveDay(day))}
+                setActiveDay={tab === 'mes' ? handleLineDayClick : (day) => {
+                  const val = day && typeof day === 'object' ? (day.iso || day.dia) : day
+                  dispatch(setActiveDay(val))
+                }}
               />
               <CardDonut
                 data={activeDonut}
