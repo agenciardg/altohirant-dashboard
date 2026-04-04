@@ -893,8 +893,78 @@ function ContentConversa({ row }) {
   )
 }
 
+/* ── Conteúdo: Aguardando Atendente ── */
+function ContentAguardando({ rows, onClickRow }) {
+  const aguardando = rows.filter(r => r.necessita_humano)
+
+  function mask(tel) {
+    if (!tel || tel.length < 4) return '***'
+    return '***' + tel.slice(-4)
+  }
+
+  return (
+    <>
+      <div className="mstats">
+        <StatRow value={aguardando.length} label="Aguardando" sub="necessitam intervenção" />
+        <StatRow value={rows.length} label="Total período" />
+      </div>
+      <div className="modal-scroll">
+        <div className="msec-title">Conversas aguardando atendente ({aguardando.length})</div>
+        {aguardando.length === 0
+          ? <div className="mempty">Nenhuma conversa aguardando atendente neste período</div>
+          : (
+            <div className="tscr">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Telefone</th>
+                    <th>Cliente</th>
+                    <th>Tipo</th>
+                    <th>Pessoas</th>
+                    <th>Aniv.</th>
+                    <th>Data</th>
+                    <th>Hora</th>
+                    <th>Reserva</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {aguardando.map((r, i) => (
+                    <tr key={i} style={{ cursor: 'pointer' }}
+                      onClick={() => onClickRow && onClickRow(r)}
+                      title="Clique para ver conversa">
+                      <td style={{ fontFamily: 'monospace', fontSize: 12 }}>{mask(r.numero_cliente)}</td>
+                      <td style={{ fontWeight: 600 }}>{r.nome_cliente || 'Não informado'}</td>
+                      <td><TipoBadge tipo={normTipo(r.tipo_atendimento)} /></td>
+                      <td style={{ textAlign: 'center' }}>{r.qtd_pessoas || '—'}</td>
+                      <td style={{ textAlign: 'center' }}>
+                        {r.eh_aniversario
+                          ? <span className="baniv" style={{ fontSize: 9, padding: '2px 7px' }}>Aniversário</span>
+                          : <span style={{ color: 'var(--t3)', fontSize: 11 }}>—</span>
+                        }
+                      </td>
+                      <td style={{ fontSize: 11, color: 'var(--t2)', whiteSpace: 'nowrap' }}>{fmtData(r.data)}</td>
+                      <td style={{ fontFamily: "'Playfair Display',serif", fontWeight: 700, fontSize: 13 }}>{fmt(r.hora)}</td>
+                      <td>
+                        {r.reserva_solicitada
+                          ? <span style={{ color: 'var(--success)', fontWeight: 600, fontSize: 11 }}>✓ Reserva</span>
+                          : <span style={{ color: 'var(--t3)', fontSize: 11 }}>—</span>
+                        }
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )
+        }
+      </div>
+    </>
+  )
+}
+
 /* ══ MODAL REGISTRY (factory pattern) ════════════════════════════════════════ */
 const MODAL_REGISTRY = {
+  aguardando:   { icon: '🚨', title: 'Aguardando Atendente',     sub: 'Conversas que necessitam intervenção humana', Component: ContentAguardando, prop: 'rows' },
   total:        { icon: '💬', title: 'Total de Interações',      sub: 'Todos os registros do período',       Component: ContentTotal,        prop: 'rows' },
   feedback:     { icon: '⭐', title: 'Satisfação do Cliente',    sub: 'Índice e feedbacks reais',            Component: ContentFeedback,     prop: 'rows' },
   clientes:     { icon: '👤', title: 'Clientes Únicos',          sub: 'Agrupados por número de telefone',    Component: ContentClientes,     prop: 'rows' },

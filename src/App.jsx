@@ -49,7 +49,7 @@ export default function App() {
   const { state, dispatch } = useDashboardFilters()
   const { tab, filterType, activeDay, turnoFilter, selectedItem, modal, kpiCollapsed, monthDrill } = state
 
-  const { user, signOut, updatePassword } = useAuthContext()
+  const { user, signOut, updatePassword, verifyPassword } = useAuthContext()
   const [settingsOpen, setSettingsOpen] = useState(false)
   const settingsRef = useRef(null)
 
@@ -312,7 +312,7 @@ export default function App() {
                     {user?.email}
                   </div>
                   <div className="settings-divider" />
-                  <ChangePassword updatePassword={updatePassword} />
+                  <ChangePassword updatePassword={updatePassword} verifyPassword={verifyPassword} />
                 </div>
               )}
             </div>
@@ -356,8 +356,27 @@ export default function App() {
         {/* ── Tab Panels (grid overlap — zero layout shift) ── */}
         <div className="tab-panels">
           <div className={`tab-panel${isHoje ? '' : ' tab-panel--hidden'}`}>
+            {/* KPI prioritário: Aguardando Atendente */}
+            {(d.kpis.aguardando?.alert || false) && (
+              <div className="g1-alert">
+                <KPICard icon="🚨" label="Aguardando Atendente" loading={loading}
+                  value={d.kpis.aguardando?.value || '0'} sub={d.kpis.aguardando?.sub || '—'}
+                  ak={tab + 'ag'} delta={d.kpis.aguardando?.delta} deltaInvert={true}
+                  alert={true}
+                  onOpenModal={() => openModal('aguardando')}
+                />
+              </div>
+            )}
+
             {/* KPIs completos — 4 cards */}
             <div className="g4">
+              {!d.kpis.aguardando?.alert && (
+                <KPICard icon="🚨" label="Aguard. Atendente" sm loading={loading}
+                  value={d.kpis.aguardando?.value || '0'} sub={d.kpis.aguardando?.sub || '—'}
+                  ak={tab + 'ag'} delta={d.kpis.aguardando?.delta} deltaInvert={true}
+                  onOpenModal={() => openModal('aguardando')}
+                />
+              )}
               <KPICard icon="💬" label="Atendimentos" loading={loading}
                 value={d.kpis.total.value} sub={d.kpis.total.sub}
                 ak={tab + 't'} delta={d.kpis.total.delta} deltaInvert={false}
@@ -404,24 +423,31 @@ export default function App() {
               />
             </div>
 
-            <div className="dashboard-hoje">
-              {/* Coluna principal */}
-              <div className="dashboard-hoje__main">
+            {/* Grid único: Reservas + Detail + Donut + Turno */}
+            <div className="dashboard-hoje-grid" ref={el => {
+              if (el) requestAnimationFrame(() => {
+                const rH = el.querySelector('.dh-reservas')?.offsetHeight
+                if (rH) el.style.setProperty('--reservas-h', rH + 'px')
+              })
+            }}>
+              <div className="dh-reservas">
                 <ReservasHoje
                   reservas={d.reservasHoje}
                   onSelectReserva={(item) => dispatch(setSelectedItem(item))}
                 />
-                <CardDonut data={d.donut} ak={tab} loading={loading}
-                  filterType={null} setFilterType={() => {}} />
               </div>
-
-              {/* Sidebar */}
-              <div className="dashboard-hoje__sidebar">
+              <div className="dh-detail">
                 <DetailPanel
                   item={selectedItem}
                   onClose={() => dispatch(setSelectedItem(null))}
                   onOpenConversa={(row) => openModal('conversa', row)}
                 />
+              </div>
+              <div className="dh-donut">
+                <CardDonut data={d.donut} ak={tab} loading={loading}
+                  filterType={null} setFilterType={() => {}} />
+              </div>
+              <div className="dh-turno">
                 <TurnoAtual />
               </div>
             </div>
@@ -468,6 +494,7 @@ export default function App() {
             {kpiCollapsed ? (
               <div className="kpi-strip">
                 {[
+                  { icon: '🚨', label: 'Aguard.', value: kpis.aguardando?.value || '0', delta: kpis.aguardando?.delta, deltaInvert: true },
                   { icon: '💬', label: 'Total', value: kpis.total.value, delta: kpis.total.delta, deltaInvert: false },
                   { icon: '👤', label: 'Únicos', value: String(clientesUnicos || 0) },
                   { icon: '🍖', label: 'Reservas', value: kpis.reservas.value, delta: kpis.reservas.delta, deltaInvert: false },
@@ -490,8 +517,27 @@ export default function App() {
               </div>
             ) : (
               <>
+                {/* KPI prioritário: Aguardando Atendente */}
+                {(kpis.aguardando?.alert || false) && (
+                  <div className="g1-alert">
+                    <KPICard icon="🚨" label="Aguardando Atendente" loading={loading}
+                      value={kpis.aguardando?.value || '0'} sub={kpis.aguardando?.sub || '—'}
+                      ak={tab + 'ag'} delta={kpis.aguardando?.delta} deltaInvert={true}
+                      alert={true}
+                      onOpenModal={() => openModal('aguardando')}
+                    />
+                  </div>
+                )}
+
                 {/* KPIs — linha 1 */}
                 <div className="g4">
+                  {!kpis.aguardando?.alert && (
+                    <KPICard icon="🚨" label="Aguard. Atendente" sm loading={loading}
+                      value={kpis.aguardando?.value || '0'} sub={kpis.aguardando?.sub || '—'}
+                      ak={tab + 'ag'} delta={kpis.aguardando?.delta} deltaInvert={true}
+                      onOpenModal={() => openModal('aguardando')}
+                    />
+                  )}
                   <KPICard icon="💬" label="Total Interações" loading={loading}
                     value={kpis.total.value}
                     sub={kpis.total.sub}

@@ -64,13 +64,20 @@ export function useAuth() {
     if (error) throw error
   }, [])
 
+  const verifyPassword = useCallback(async (currentPassword) => {
+    const email = user?.email
+    if (!email) throw new Error('Usuário não encontrado')
+    const { error } = await supabase.auth.signInWithPassword({ email, password: currentPassword })
+    if (error) throw new Error('Senha atual incorreta')
+  }, [user])
+
   const updatePassword = useCallback(async (newPassword) => {
     const { data, error } = await supabase.auth.updateUser({ password: newPassword })
     if (error) throw error
     return data
   }, [])
 
-  return { user, session, loading, signIn, signOut, updatePassword }
+  return { user, session, loading, signIn, signOut, updatePassword, verifyPassword }
 }
 
 // ---------------------------------------------------------------------------

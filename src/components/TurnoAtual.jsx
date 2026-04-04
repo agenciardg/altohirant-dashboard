@@ -25,6 +25,13 @@ const ICONES = {
   'Fechado': '🔒',
 }
 
+const CORES_TURNO = {
+  'Almoço': '#e8a020',
+  'Happy Hour': '#F97316',
+  'Jantar': '#E85D04',
+  'Fechado': '#6B7280',
+}
+
 const DIAS_NOME = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado']
 
 function fmtCountdown(minutos) {
@@ -41,23 +48,28 @@ function calcTurno() {
 
   const turnos = HORARIOS[dia]
 
-  // Terça ou dia sem horários definidos
   if (!turnos) {
-    // Encontrar próximo dia aberto
     const proximoInfo = encontrarProximaAbertura(dia, horaAtual)
     return {
       nome: 'Fechado',
       icone: '🔒',
       countdown: proximoInfo,
       ativo: false,
+      turnoIndex: -1,
+      totalTurnos: 0,
+      progresso: 0,
+      horaInicio: null,
+      horaFim: null,
+      allTurnos: [],
     }
   }
 
-  // Verificar se estamos em algum turno
   for (let i = 0; i < turnos.length; i++) {
     const t = turnos[i]
     if (horaAtual >= t.inicio && horaAtual < t.fim) {
       const minutosRestantes = Math.ceil((t.fim - horaAtual) * 60)
+      const duracao = t.fim - t.inicio
+      const progresso = ((horaAtual - t.inicio) / duracao) * 100
       const proximo = turnos[i + 1]
       return {
         nome: t.nome,
@@ -66,11 +78,16 @@ function calcTurno() {
           ? `${proximo.nome} em ${fmtCountdown(Math.ceil((proximo.inicio - horaAtual) * 60))}`
           : `Fecha em ${fmtCountdown(minutosRestantes)}`,
         ativo: true,
+        turnoIndex: i,
+        totalTurnos: turnos.length,
+        progresso,
+        horaInicio: t.inicio,
+        horaFim: t.fim,
+        allTurnos: turnos,
       }
     }
   }
 
-  // Antes do primeiro turno do dia
   if (horaAtual < turnos[0].inicio) {
     const minutosAte = Math.ceil((turnos[0].inicio - horaAtual) * 60)
     return {
@@ -78,16 +95,27 @@ function calcTurno() {
       icone: '🔒',
       countdown: `Abre às ${turnos[0].inicio}h (${turnos[0].nome} em ${fmtCountdown(minutosAte)})`,
       ativo: false,
+      turnoIndex: -1,
+      totalTurnos: turnos.length,
+      progresso: 0,
+      horaInicio: null,
+      horaFim: null,
+      allTurnos: turnos,
     }
   }
 
-  // Depois do último turno
   const proximoInfo = encontrarProximaAbertura(dia, horaAtual)
   return {
     nome: 'Fechado',
     icone: '🔒',
     countdown: proximoInfo,
     ativo: false,
+    turnoIndex: -1,
+    totalTurnos: turnos.length,
+    progresso: 0,
+    horaInicio: null,
+    horaFim: null,
+    allTurnos: [],
   }
 }
 
@@ -102,56 +130,189 @@ function encontrarProximaAbertura(diaAtual, horaAtual) {
   return 'Horário indisponível'
 }
 
+function fmtHora(h) {
+  const hh = Math.floor(h)
+  const mm = Math.round((h - hh) * 60)
+  return `${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')}`
+}
+
+function ProgressArc({ progresso, cor, size = 80, stroke = 5 }) {
+  const r = (size - stroke) / 2
+  const circ = 2 * Math.PI * r
+  const offset = circ - (progresso / 100) * circ
+
+  return (
+    <svg width={size} height={size} style={{ transform: 'rotate(-90deg)' }}>
+      <circle cx={size / 2} cy={size / 2} r={r}
+        fill="none" stroke="var(--border)" strokeWidth={stroke} opacity={0.4} />
+      <circle cx={size / 2} cy={size / 2} r={r}
+        fill="none" stroke={cor} strokeWidth={stroke}
+        strokeDasharray={circ} strokeDashoffset={offset}
+        strokeLinecap="round"
+        style={{ transition: 'stroke-dashoffset 1s ease' }} />
+    </svg>
+  )
+}
+
 function TurnoAtualInner() {
   const [turno, setTurno] = useState(calcTurno)
 
   useEffect(() => {
-    const id = setInterval(() => setTurno(calcTurno()), 60000)
+    const id = setInterval(() => setTurno(calcTurno()), 30000)
     return () => clearInterval(id)
   }, [])
+
+  const cor = CORES_TURNO[turno.nome] || '#6B7280'
+  const aberto = turno.ativo
 
   return (
     <div className="turno-atual-card" style={{
       background: 'var(--card)',
       borderRadius: 12,
-      padding: '12px 16px',
-      maxWidth: 380,
       border: '1px solid var(--border)',
       boxShadow: 'var(--card-glow, none)',
       transition: 'background 0.35s, border-color 0.35s',
+      padding: '14px 16px',
+      display: 'flex',
+      flexDirection: 'column',
+      gap: 12,
+      position: 'relative',
+      overflow: 'hidden',
     }}>
+      {/* Top gradient bar */}
       <div style={{
-        fontSize: 11,
-        textTransform: 'uppercase',
-        letterSpacing: '0.12em',
-        fontWeight: 600,
-        color: 'var(--t3)',
-        marginBottom: 6,
-      }}>
-        Turno Atual
-      </div>
-      <div style={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: 8,
-        marginBottom: 5,
-      }}>
-        <span style={{ fontSize: 21 }}>{turno.icone}</span>
-        <span style={{
-          fontSize: 18,
-          fontWeight: 700,
-          color: turno.ativo ? '#e8a020' : 'var(--t2)',
+        position: 'absolute', top: 0, left: 0, right: 0, height: 3,
+        background: aberto
+          ? `linear-gradient(90deg, ${cor}, #e8a020, ${cor})`
+          : 'linear-gradient(90deg, #4B5563, #6B7280, #4B5563)',
+      }} />
+
+      {/* Header */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div style={{
+          fontSize: 9, textTransform: 'uppercase', letterSpacing: '0.14em',
+          fontWeight: 600, color: 'var(--t2)',
         }}>
-          {turno.nome}
-        </span>
+          Turno Atual
+        </div>
+        <div style={{
+          fontSize: 9, fontWeight: 700, letterSpacing: '0.06em',
+          padding: '2px 8px', borderRadius: 20,
+          background: aberto ? 'rgba(34,197,94,0.13)' : 'rgba(107,114,128,0.14)',
+          color: aberto ? '#22C55E' : '#6B7280',
+        }}>
+          {aberto ? 'ABERTO' : 'FECHADO'}
+        </div>
       </div>
-      <div style={{
-        fontFamily: 'monospace',
-        fontSize: 14,
-        color: 'var(--t2)',
-      }}>
-        {turno.countdown}
+
+      {/* Main content */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+        {/* Progress ring or status icon */}
+        <div style={{ position: 'relative', flexShrink: 0, width: 80, height: 80 }}>
+          {aberto ? (
+            <>
+              <ProgressArc progresso={turno.progresso} cor={cor} />
+              <div style={{
+                position: 'absolute', inset: 0,
+                display: 'flex', flexDirection: 'column',
+                alignItems: 'center', justifyContent: 'center',
+              }}>
+                <span style={{ fontSize: 20 }}>{turno.icone}</span>
+                <span style={{
+                  fontSize: 9, fontWeight: 700, color: cor,
+                  letterSpacing: '0.04em', marginTop: 1,
+                }}>
+                  {Math.round(turno.progresso)}%
+                </span>
+              </div>
+            </>
+          ) : (
+            <div style={{
+              width: 80, height: 80, borderRadius: '50%',
+              border: '2px solid var(--border)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              opacity: 0.6,
+            }}>
+              <span style={{ fontSize: 28 }}>🔒</span>
+            </div>
+          )}
+        </div>
+
+        {/* Info */}
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{
+            fontFamily: "'Playfair Display', serif",
+            fontSize: 22, fontWeight: 900, lineHeight: 1.1,
+            color: aberto ? cor : 'var(--t2)',
+            letterSpacing: '-0.02em',
+          }}>
+            {turno.nome}
+          </div>
+          <div style={{
+            fontFamily: 'monospace',
+            fontSize: 13, color: 'var(--t2)', marginTop: 4,
+          }}>
+            {turno.countdown}
+          </div>
+          {aberto && turno.horaInicio != null && (
+            <div style={{
+              fontSize: 10, color: 'var(--t3)', marginTop: 4,
+              letterSpacing: '0.04em',
+            }}>
+              {fmtHora(turno.horaInicio)} — {fmtHora(turno.horaFim)}
+            </div>
+          )}
+        </div>
       </div>
+
+      {/* Timeline dos turnos do dia */}
+      {turno.allTurnos.length > 0 && (
+        <div style={{
+          borderTop: '1px solid var(--border)',
+          paddingTop: 10, marginTop: 2,
+        }}>
+          <div style={{
+            fontSize: 9, textTransform: 'uppercase', letterSpacing: '0.12em',
+            fontWeight: 600, color: 'var(--t3)', marginBottom: 8,
+          }}>
+            Turnos de hoje
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+            {turno.allTurnos.map((t, i) => {
+              const isAtivo = turno.turnoIndex === i
+              const corT = CORES_TURNO[t.nome] || '#6B7280'
+              const jaPassed = !isAtivo && turno.turnoIndex > i
+              return (
+                <div key={i} style={{
+                  display: 'flex', alignItems: 'center', gap: 8,
+                  opacity: jaPassed ? 0.4 : 1,
+                  transition: 'opacity 0.3s',
+                }}>
+                  <div style={{
+                    width: 6, height: 6, borderRadius: '50%',
+                    background: isAtivo ? corT : 'var(--border)',
+                    boxShadow: isAtivo ? `0 0 8px ${corT}` : 'none',
+                    flexShrink: 0,
+                  }} />
+                  <div style={{
+                    fontSize: 11, fontWeight: isAtivo ? 700 : 500,
+                    color: isAtivo ? corT : 'var(--t2)',
+                    flex: 1,
+                  }}>
+                    {t.nome}
+                  </div>
+                  <div style={{
+                    fontSize: 10, fontFamily: 'monospace',
+                    color: isAtivo ? 'var(--t1)' : 'var(--t3)',
+                  }}>
+                    {Math.floor(t.inicio)}h–{t.fim === 24 ? '00' : t.fim}h
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )}
     </div>
   )
 }

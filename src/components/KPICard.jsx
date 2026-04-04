@@ -1,7 +1,7 @@
 import { memo, useCallback } from 'react'
 
-function KPICardInner({ icon, label, value, sub, sm, onClick, active, ak, loading, onOpenModal, delta, deltaInvert }) {
-  const cls = `card kc clickable${active ? ' active-card' : ''}`
+function KPICardInner({ icon, label, value, sub, sm, onClick, active, ak, loading, onOpenModal, delta, deltaInvert, alert }) {
+  const cls = `card kc clickable${active ? ' active-card' : ''}${alert ? ' kc--alert' : ''}`
   const handleClick = useCallback(() => {
     if (onClick) { onClick(); return }
     if (onOpenModal) onOpenModal()

@@ -42,6 +42,15 @@ html[data-theme="dark"] .kc:hover{
 .kc.clickable{cursor:pointer}
 .kc.active-card{outline:2px solid #E85D04;outline-offset:-2px}
 
+/* ── Alert state (Aguardando Atendente) ── */
+.kc--alert{outline:1px solid rgba(232,160,32,0.35);outline-offset:-1px}
+.kc--alert::before{background:linear-gradient(90deg,#E85D04,#e8a020,#F97316) !important}
+.kc--alert .kval{color:#E85D04}
+
+/* ── Alert highlight row (full-width card) ── */
+.g1-alert{margin-bottom:8px}
+.g1-alert .card{max-width:100%}
+
 .klbl{display:flex;align-items:center;gap:5px;font-size:9px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--t2);transition:color .35s}
 .kico{font-size:13px}
 .kval{font-family:'Playfair Display',serif;font-weight:900;font-size:28px;letter-spacing:-.02em;line-height:1.05;color:var(--t1);transition:color .35s;margin-top:4px}
@@ -141,23 +150,29 @@ tbody td{font-size:11px;font-weight:500;color:var(--t1);padding:5px 10px;transit
 .fclear{background:none;border:1px solid var(--border);cursor:pointer;font-size:9px;color:var(--t2);font-weight:700;letter-spacing:.1em;text-transform:uppercase;padding:3px 9px;border-radius:20px;transition:all .2s;font-family:'DM Sans',sans-serif}
 .fclear:hover{border-color:#E85D04;color:#E85D04}
 
-/* ── Layout Aba HOJE (padrão F) ── */
-.dashboard-hoje {
+/* ── Layout Aba HOJE (grid único) ── */
+.dashboard-hoje-grid {
   display: grid;
-  grid-template-columns: 1fr 380px;
+  grid-template-columns: 1fr 1fr 380px;
+  grid-template-rows: auto auto;
+  grid-template-areas:
+    "reservas reservas detail"
+    "donut    turno    detail";
   gap: 8px;
   margin-top: 8px;
 }
-.dashboard-hoje__main {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  overflow-y: auto;
-}
-.dashboard-hoje__sidebar {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
+.dh-reservas { grid-area: reservas; min-width: 0; align-self: start; }
+.dh-detail   { grid-area: detail;   min-width: 0; }
+.dh-detail > .detail-panel { height: 100%; overflow-y: auto; }
+.dh-donut    { grid-area: donut;    min-width: 0; }
+.dh-donut > .card { height: 100%; }
+.dh-turno    { grid-area: turno;    min-width: 0; }
+.dh-turno > * { height: 100%; }
+@media (max-width: 900px) {
+  .dashboard-hoje-grid {
+    grid-template-columns: 1fr;
+    grid-template-areas: "reservas" "detail" "donut" "turno";
+  }
 }
 
 /* ── Métricas compactas ── */
