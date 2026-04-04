@@ -25,14 +25,15 @@ function EyeIcon({ visible, onClick }) {
 const styles = {
   container: {
     width: '280px',
-    background: '#1e1e1e',
+    background: 'var(--card)',
     borderRadius: '10px',
     padding: '16px',
     fontFamily: "'DM Sans', sans-serif",
     boxSizing: 'border-box',
+    transition: 'background 0.35s',
   },
   title: {
-    color: '#f0ece4',
+    color: 'var(--t1)',
     fontSize: '13px',
     fontWeight: '600',
     marginBottom: '14px',
@@ -43,7 +44,7 @@ const styles = {
   },
   label: {
     display: 'block',
-    color: '#a89f93',
+    color: 'var(--t2)',
     fontSize: '11px',
     fontWeight: '500',
     marginBottom: '5px',
@@ -55,16 +56,16 @@ const styles = {
   },
   input: {
     width: '100%',
-    background: '#2a2a2a',
-    border: '1px solid rgba(255,255,255,0.07)',
+    background: 'var(--bg1, var(--card))',
+    border: '1px solid var(--border)',
     borderRadius: '6px',
-    color: '#f0ece4',
+    color: 'var(--t1)',
     fontSize: '13px',
     padding: '8px 32px 8px 10px',
     outline: 'none',
     boxSizing: 'border-box',
     fontFamily: "'DM Sans', sans-serif",
-    transition: 'border-color 0.15s ease',
+    transition: 'border-color 0.15s ease, background 0.35s, color 0.35s',
   },
   inputFocus: {
     borderColor: '#E85D04',

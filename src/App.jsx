@@ -356,27 +356,18 @@ export default function App() {
         {/* ── Tab Panels (grid overlap — zero layout shift) ── */}
         <div className="tab-panels">
           <div className={`tab-panel${isHoje ? '' : ' tab-panel--hidden'}`}>
-            {/* KPI prioritário: Aguardando Atendente */}
-            {(d.kpis.aguardando?.alert || false) && (
-              <div className="g1-alert">
-                <KPICard icon="🚨" label="Aguardando Atendente" loading={loading}
-                  value={d.kpis.aguardando?.value || '0'} sub={d.kpis.aguardando?.sub || '—'}
-                  ak={tab + 'ag'} delta={d.kpis.aguardando?.delta} deltaInvert={true}
-                  alert={true}
-                  onOpenModal={() => openModal('aguardando')}
-                />
-              </div>
-            )}
+            {/* KPI prioritário: Aguardando Atendente — sempre full-width */}
+            <div className="g1-alert">
+              <KPICard icon="🚨" label="Aguardando Atendente" loading={loading}
+                value={d.kpis.aguardando?.value || '0'} sub={d.kpis.aguardando?.sub || '—'}
+                ak={tab + 'ag'} delta={d.kpis.aguardando?.delta} deltaInvert={true}
+                alert={d.kpis.aguardando?.alert || false}
+                onOpenModal={() => openModal('aguardando')}
+              />
+            </div>
 
             {/* KPIs completos — 4 cards */}
             <div className="g4">
-              {!d.kpis.aguardando?.alert && (
-                <KPICard icon="🚨" label="Aguard. Atendente" sm loading={loading}
-                  value={d.kpis.aguardando?.value || '0'} sub={d.kpis.aguardando?.sub || '—'}
-                  ak={tab + 'ag'} delta={d.kpis.aguardando?.delta} deltaInvert={true}
-                  onOpenModal={() => openModal('aguardando')}
-                />
-              )}
               <KPICard icon="💬" label="Atendimentos" loading={loading}
                 value={d.kpis.total.value} sub={d.kpis.total.sub}
                 ak={tab + 't'} delta={d.kpis.total.delta} deltaInvert={false}

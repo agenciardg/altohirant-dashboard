@@ -3,8 +3,8 @@ import { SvgLine } from '../charts/SvgLine'
 
 function CardLinhaInner({ data, label, activeDay, setActiveDay, ak, loading, hasRealData }) {
   return (
-    <div className="card">
-      <div className="ch" style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', alignItems: 'center' }}>
+    <div className="card" style={{ display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+      <div className="ch" style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', alignItems: 'center', flexShrink: 0 }}>
         <div />
         <div style={{ textAlign: 'center' }}>
           <div className="ct">Atendimentos por Período</div>
@@ -14,7 +14,7 @@ function CardLinhaInner({ data, label, activeDay, setActiveDay, ak, loading, has
           {!loading && hasRealData && <span className="b ba">dados reais</span>}
         </div>
       </div>
-      <div className="cbdy">
+      <div className="cbdy" style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
         {loading
           ? <div style={{ height: 150, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--t2)', fontSize: 12 }}>Carregando...</div>
           : <>
