@@ -60,6 +60,7 @@ export function computeKPIs(rows, prevRows, tab) {
   const reclamacoes = rows.filter(r => normTipo(r.tipo_atendimento) === 'Reclamacao').length
   const programacaoCount = rows.filter(r => normTipo(r.tipo_atendimento) === 'Programacao').length
   const aguardandoAtendente = rows.filter(r => r.necessita_humano).length
+  const totalAtendidoPorHumano = rows.filter(r => r.atendido_por_humano).length
 
   // Satisfação: apenas registros com feedback_empresa preenchido
   const comFeedback = rows.filter(r => r.feedback_empresa != null && r.feedback_empresa !== '')
@@ -82,6 +83,7 @@ export function computeKPIs(rows, prevRows, tab) {
   const prevReclamacoes = safe.filter(r => normTipo(r.tipo_atendimento) === 'Reclamacao').length
   const prevProgramacao = safe.filter(r => normTipo(r.tipo_atendimento) === 'Programacao').length
   const prevAguardando = safe.filter(r => r.necessita_humano).length
+  const prevAtendidoPorHumano = safe.filter(r => r.atendido_por_humano).length
 
   const prevComFeedback = safe.filter(r => r.feedback_empresa != null && r.feedback_empresa !== '')
   const prevPositivos = prevComFeedback.filter(r => normFeedback(r.feedback_empresa) === 'Positivo').length
@@ -156,6 +158,8 @@ export function computeKPIs(rows, prevRows, tab) {
       reclamacoes: { value: String(reclamacoes), sub: subLabel, delta: calcDelta(reclamacoes, prevReclamacoes), deltaInvert: true },
       programacao: { value: String(programacaoCount), sub: diaMaisProcurado ? `Top: ${diaMaisProcurado.dia}` : '—', delta: calcDelta(programacaoCount, prevProgramacao), deltaInvert: false },
       aguardando: { value: String(aguardandoAtendente), sub: aguardandoAtendente > 0 ? `${aguardandoAtendente} conversa${aguardandoAtendente !== 1 ? 's' : ''} aguardando` : 'Nenhuma pendência', delta: calcDelta(aguardandoAtendente, prevAguardando), deltaInvert: true, alert: aguardandoAtendente > 0 },
+      concluido: { value: String(totalAtendidoPorHumano), sub: totalAtendidoPorHumano > 0 ? `${totalAtendidoPorHumano} conversa${totalAtendidoPorHumano !== 1 ? 's' : ''} resolvida${totalAtendidoPorHumano !== 1 ? 's' : ''}` : 'Nenhuma resolução', delta: calcDelta(totalAtendidoPorHumano, prevAtendidoPorHumano), deltaInvert: false },
+      clientesHelena: { value: String(total), sub: 'atendimentos totais', delta: calcDelta(total, prevTotal), deltaInvert: false },
     },
     clientesUnicos,
     reservasHoje,

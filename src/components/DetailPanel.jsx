@@ -127,18 +127,18 @@ function DetailPanelInner({ item, onClose, onOpenConversa }) {
       transition: 'transform 0.2s ease-out, background 0.35s, border-color 0.35s',
       boxShadow: 'var(--card-glow, none)',
     }}>
-        <div style={{ padding: 16 }}>
+        <div style={{ padding: '10px 14px', position: 'relative' }}>
           {/* Header */}
           <div style={{
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',
-            marginBottom: 16,
-            paddingBottom: 10,
+            marginBottom: 8,
+            paddingBottom: 6,
             borderBottom: '1px solid var(--border)',
           }}>
             <div style={{
-              fontSize: 17,
+              fontSize: 15,
               fontWeight: 700,
               color: 'var(--t1)',
             }}>
@@ -158,6 +158,20 @@ function DetailPanelInner({ item, onClose, onOpenConversa }) {
             </div>
           </div>
 
+          {/* Logo watermark — só aparece quando blur ativo */}
+          {!infoVisible && (
+            <div style={{
+              position: 'absolute', left: 0, right: 0, top: 0, bottom: 0,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              zIndex: 2, pointerEvents: 'none',
+            }}>
+              <img src="/logo.png" alt="" style={{
+                width: '70%', maxWidth: 220, objectFit: 'contain',
+                opacity: 0.18,
+              }} />
+            </div>
+          )}
+
           {/* Conteúdo com blur toggle */}
           <div style={{
             filter: infoVisible ? 'none' : 'blur(6px)',
@@ -171,8 +185,8 @@ function DetailPanelInner({ item, onClose, onOpenConversa }) {
           <div style={{
             display: 'grid',
             gridTemplateColumns: '1fr 1fr',
-            gap: 12,
-            marginBottom: 16,
+            gap: '6px 10px',
+            marginBottom: 8,
           }}>
             <Field label="TELEFONE" value={item.numero_cliente || '--'} />
             <Field label="DATA" value={fmtData(item.data)} />
@@ -190,27 +204,27 @@ function DetailPanelInner({ item, onClose, onOpenConversa }) {
               background: 'rgba(232, 160, 32, 0.08)',
               border: '1px solid rgba(232, 160, 32, 0.2)',
               borderRadius: 8,
-              padding: '10px 14px',
-              marginBottom: 12,
+              padding: '7px 12px',
+              marginBottom: 6,
             }}>
               <div style={{
-                fontSize: 12,
+                fontSize: 10,
                 fontWeight: 700,
                 textTransform: 'uppercase',
                 letterSpacing: '0.08em',
                 color: '#e8a020',
-                marginBottom: 6,
+                marginBottom: 3,
               }}>
                 🎂 Aniversário
               </div>
               <div style={{
-                fontSize: 14,
+                fontSize: 12,
                 color: 'var(--t1)',
               }}>
                 {cortesiaAniversario(item.qtd_pessoas)}
               </div>
               {item.qtd_pessoas != null && (
-                <div style={{ fontSize: 12, color: 'var(--t2)', marginTop: 4 }}>
+                <div style={{ fontSize: 11, color: 'var(--t2)', marginTop: 2 }}>
                   Grupo de {item.qtd_pessoas} pessoa{item.qtd_pessoas !== 1 ? 's' : ''}
                 </div>
               )}
@@ -219,19 +233,19 @@ function DetailPanelInner({ item, onClose, onOpenConversa }) {
 
           {/* Qtd pessoas (quando não é aniversário) */}
           {!item.eh_aniversario && item.qtd_pessoas != null && (
-            <div style={{ marginBottom: 10 }}>
+            <div style={{ marginBottom: 6 }}>
               <Field label="PESSOAS NO GRUPO" value={`${item.qtd_pessoas} pessoa${item.qtd_pessoas !== 1 ? 's' : ''}`} />
             </div>
           )}
 
           {/* Feedback */}
-          <div style={{ marginBottom: 10 }}>
+          <div style={{ marginBottom: 6 }}>
             <div style={{
-              fontSize: 11,
+              fontSize: 10,
               textTransform: 'uppercase',
               letterSpacing: '0.08em',
               color: 'var(--t3)',
-              marginBottom: 5,
+              marginBottom: 3,
             }}>
               FEEDBACK
             </div>
@@ -245,9 +259,9 @@ function DetailPanelInner({ item, onClose, onOpenConversa }) {
           <div style={{
             display: 'grid',
             gridTemplateColumns: '1fr 1fr',
-            gap: 10,
-            marginTop: 10,
-            paddingTop: 10,
+            gap: '4px 10px',
+            marginTop: 6,
+            paddingTop: 6,
             borderTop: '1px solid var(--border)',
           }}>
             {item.tempo_resposta_ms != null && (
@@ -262,7 +276,7 @@ function DetailPanelInner({ item, onClose, onOpenConversa }) {
 
           {/* Data reserva pedida — só destaca se é reserva real */}
           {item.data_reserva_pedida && (
-            <div style={{ marginTop: 10 }}>
+            <div style={{ marginTop: 6 }}>
               {item.reserva_solicitada
                 ? <Field label="RESERVA PARA" value={fmtData(item.data_reserva_pedida)} highlight />
                 : <Field label="DATA MENCIONADA" value={fmtData(item.data_reserva_pedida)} />
@@ -275,9 +289,9 @@ function DetailPanelInner({ item, onClose, onOpenConversa }) {
             <button
               onClick={() => onOpenConversa(item)}
               style={{
-                marginTop: 14,
+                marginTop: 8,
                 width: '100%',
-                padding: '8px 14px',
+                padding: '6px 14px',
                 background: 'rgba(232,93,4,0.12)',
                 border: '1px solid rgba(232,93,4,0.3)',
                 borderRadius: 8,
@@ -304,16 +318,16 @@ function Field({ label, value, children, highlight }) {
   return (
     <div>
       <div style={{
-        fontSize: 11,
+        fontSize: 10,
         textTransform: 'uppercase',
         letterSpacing: '0.08em',
         color: 'var(--t3)',
-        marginBottom: 3,
+        marginBottom: 2,
       }}>
         {label}
       </div>
       <div style={{
-        fontSize: 15,
+        fontSize: 13,
         color: highlight ? '#e8a020' : 'var(--t1)',
         fontWeight: highlight ? 600 : 500,
       }}>

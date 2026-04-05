@@ -12,30 +12,127 @@ function fmtData(data) {
   return `${d}/${m}/${y}`
 }
 
+/* ── Botão copiar telefone ── */
+function CopyPhone({ numero }) {
+  const [copied, setCopied] = useState(false)
+  if (!numero) return null
+  const handleCopy = (e) => {
+    e.stopPropagation()
+    navigator.clipboard.writeText(numero)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 1500)
+  }
+  return (
+    <span onClick={handleCopy} style={{
+      cursor: 'pointer', marginLeft: 4, fontSize: 11,
+      opacity: copied ? 1 : 0.5, transition: 'opacity 0.2s',
+      position: 'relative', display: 'inline-block',
+    }} title={`Copiar: ${numero}`}>
+      {copied ? <span style={{ color: '#22C55E' }}>✓</span> : '📋'}
+      {copied && (
+        <span style={{
+          position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%, -50%)',
+          background: 'rgba(34,197,94,0.95)', color: '#fff',
+          fontSize: 14, fontWeight: 700, letterSpacing: '0.04em',
+          padding: '12px 24px', borderRadius: 10, whiteSpace: 'nowrap',
+          pointerEvents: 'none', zIndex: 99999,
+          boxShadow: '0 8px 32px rgba(0,0,0,0.3)',
+          animation: 'fadeIn 0.15s ease',
+        }}>
+          Telefone copiado!
+        </span>
+      )}
+    </span>
+  )
+}
+
+/* ── Wait time helper ── */
+function calcEspera(data, hora) {
+  if (!data || !hora) return null
+  const dt = new Date(`${data}T${hora}`)
+  const diffMs = Date.now() - dt.getTime()
+  const mins = Math.floor(diffMs / 60000)
+  if (mins < 60) return { text: `${mins}min`, danger: false }
+  const hrs = Math.floor(mins / 60)
+  if (hrs < 24) return { text: `${hrs}h`, danger: hrs >= 4 }
+  const days = Math.floor(hrs / 24)
+  return { text: `${days}d`, danger: true }
+}
+
 /* ── Tabela padrão para listagem de registros nos modais ── */
-function MTable({ rows, onClickRow }) {
+function MTable({ rows, onClickRow, onMarkAtendido, refetchData, selectedRowId }) {
+  const rowRefs = useRef({})
+
+  useEffect(() => {
+    if (selectedRowId != null && rowRefs.current[selectedRowId]) {
+      rowRefs.current[selectedRowId].scrollIntoView({ behavior: 'smooth', block: 'center' })
+    }
+  }, [selectedRowId])
+
   if (!rows || rows.length === 0) return null
+  const hasAguardando = rows.some(r => r.necessita_humano)
   return (
     <div className="tscr">
       <table>
         <thead>
-          <tr><th>ID</th><th>Data</th><th>Hora</th><th>Cliente</th><th>Tipo</th><th>Turno</th><th>Feedback</th></tr>
+          <tr>
+            <th>ID</th><th>Data</th><th>Hora</th><th>Cliente</th><th>Tipo</th><th>Turno</th><th>Feedback</th>
+            {hasAguardando && <th>Espera</th>}
+            {hasAguardando && onMarkAtendido && <th>Ação</th>}
+          </tr>
         </thead>
         <tbody>
-          {rows.map((r, i) => (
-            <tr key={i}
-              style={{ cursor: 'pointer' }}
-              onClick={() => onClickRow && onClickRow(r)}
-              title="Clique para ver conversa">
-              <td style={{ color: 'var(--t3)', fontSize: 11, fontFamily: 'monospace' }}>#{String(i + 1).padStart(3, '0')}</td>
-              <td style={{ fontSize: 11, color: 'var(--t2)', whiteSpace: 'nowrap' }}>{fmtData(r.data)}</td>
-              <td style={{ fontFamily: "'Playfair Display',serif", fontWeight: 700, fontSize: 13 }}>{fmt(r.hora)}</td>
-              <td style={{ fontWeight: 600 }}>{r.nome_cliente || r.numero_cliente || 'Desconhecido'}</td>
-              <td><TipoBadge tipo={normTipo(r.tipo_atendimento)} /></td>
-              <td><TurnoBadge turno={normTurno(r.turno)} /></td>
-              <td><StBadge st={normFeedback(r.feedback_empresa)} /></td>
-            </tr>
-          ))}
+          {rows.map((r, i) => {
+            const espera = hasAguardando && r.necessita_humano ? calcEspera(r.data, r.hora) : null
+            const isSelected = selectedRowId != null && r.id === selectedRowId
+            return (
+              <tr key={i}
+                ref={el => { if (el) rowRefs.current[r.id] = el; else delete rowRefs.current[r.id] }}
+                style={{
+                  cursor: 'pointer',
+                  background: isSelected ? 'rgba(232,160,32,0.18)' : undefined,
+                  outline: isSelected ? '1px solid rgba(232,160,32,0.5)' : undefined,
+                  transition: 'background 0.2s',
+                }}
+                onClick={() => onClickRow && onClickRow(r)}
+                title="Clique para ver conversa">
+                <td style={{ color: 'var(--t3)', fontSize: 11, fontFamily: 'monospace' }}>#{String(i + 1).padStart(3, '0')}</td>
+                <td style={{ fontSize: 11, color: 'var(--t2)', whiteSpace: 'nowrap' }}>{fmtData(r.data)}</td>
+                <td style={{ fontFamily: "'Playfair Display',serif", fontWeight: 700, fontSize: 13 }}>{fmt(r.hora)}</td>
+                <td style={{ fontWeight: 600 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 4 }}>
+                    <span>{r.nome_cliente || r.numero_cliente || 'Desconhecido'}</span>
+                    <CopyPhone numero={r.numero_cliente} />
+                  </div>
+                </td>
+                <td><TipoBadge tipo={normTipo(r.tipo_atendimento)} /></td>
+                <td><TurnoBadge turno={normTurno(r.turno)} /></td>
+                <td><StBadge st={normFeedback(r.feedback_empresa)} /></td>
+                {hasAguardando && (
+                  <td>
+                    {espera
+                      ? <span style={{ fontSize: 11, fontWeight: 700, color: espera.danger ? '#EF4444' : 'var(--t2)' }}>{espera.text}</span>
+                      : <span style={{ color: 'var(--t3)', fontSize: 11 }}>—</span>
+                    }
+                  </td>
+                )}
+                {hasAguardando && onMarkAtendido && (
+                  <td>
+                    {r.necessita_humano && (
+                      <button onClick={(e) => { e.stopPropagation(); onMarkAtendido(r.id) }} style={{
+                        fontSize: 9, fontWeight: 700, letterSpacing: '0.04em', textTransform: 'uppercase',
+                        padding: '4px 10px', borderRadius: 8,
+                        border: '1px solid rgba(232,93,4,0.4)',
+                        background: 'linear-gradient(135deg, rgba(232,93,4,0.08), rgba(232,93,4,0.15))',
+                        color: '#F97316', cursor: 'pointer',
+                        transition: 'all 0.18s',
+                      }}>ATENDIDO</button>
+                    )}
+                  </td>
+                )}
+              </tr>
+            )
+          })}
         </tbody>
       </table>
     </div>
@@ -54,7 +151,7 @@ function StatRow({ label, value, sub, onClick, active }) {
 }
 
 /* ── Conteúdo: Total Atendimentos ── */
-function ContentTotal({ rows, onClickRow }) {
+function ContentTotal({ rows, onClickRow, selectedRowId }) {
   const [filter, setFilter] = useState(null)
   const total = rows.length
   const porTipo = {}
@@ -85,7 +182,7 @@ function ContentTotal({ rows, onClickRow }) {
         <div className="msec-title">{filter && filter !== 'clientes' ? `Filtrado: ${filter === 'fora' ? 'Fora do horário' : filter}` : 'Todos os atendimentos'} ({filtered.length})</div>
         {filtered.length === 0
           ? <div className="mempty">Nenhum atendimento neste período</div>
-          : <MTable rows={filtered} onClickRow={onClickRow} />
+          : <MTable rows={filtered} onClickRow={onClickRow} selectedRowId={selectedRowId} />
         }
       </div>
     </>
@@ -93,7 +190,7 @@ function ContentTotal({ rows, onClickRow }) {
 }
 
 /* ── Conteúdo: Reservas ── */
-function ContentReservas({ rows, onClickRow }) {
+function ContentReservas({ rows, onClickRow, selectedRowId }) {
   const [filter, setFilter] = useState(null)
   const reservas = rows.filter(r => r.reserva_solicitada)
   const semReserva = rows.filter(r => !r.reserva_solicitada)
@@ -110,7 +207,7 @@ function ContentReservas({ rows, onClickRow }) {
         <div className="msec-title">{filter === 'reservas' ? 'Com reserva' : filter === 'sem' ? 'Sem reserva' : 'Todos'} ({filtered.length})</div>
         {filtered.length === 0
           ? <div className="mempty">Nenhuma reserva neste período</div>
-          : <MTable rows={filtered} onClickRow={onClickRow} />
+          : <MTable rows={filtered} onClickRow={onClickRow} selectedRowId={selectedRowId} />
         }
       </div>
     </>
@@ -118,7 +215,7 @@ function ContentReservas({ rows, onClickRow }) {
 }
 
 /* ── Conteúdo: Fora do Horário ── */
-function ContentFora({ rows, onClickRow }) {
+function ContentFora({ rows, onClickRow, selectedRowId }) {
   const [filter, setFilter] = useState('fora')
   const fora = rows.filter(r => r.fora_horario)
   const noHorario = rows.filter(r => !r.fora_horario)
@@ -138,7 +235,7 @@ function ContentFora({ rows, onClickRow }) {
         <div className="msec-title">{filter === 'fora' ? 'Fora do horário' : filter === 'no' ? 'No horário' : 'Todos'} ({filtered.length})</div>
         {filtered.length === 0
           ? <div className="mempty">Nenhum atendimento nesta categoria</div>
-          : <MTable rows={filtered} onClickRow={onClickRow} />
+          : <MTable rows={filtered} onClickRow={onClickRow} selectedRowId={selectedRowId} />
         }
       </div>
     </>
@@ -146,7 +243,7 @@ function ContentFora({ rows, onClickRow }) {
 }
 
 /* ── Conteúdo: Horário de Pico ── */
-function ContentPico({ rows, onClickRow }) {
+function ContentPico({ rows, onClickRow, selectedRowId }) {
   const [filter, setFilter] = useState(null)
   const counts = {}
   rows.forEach(r => {
@@ -219,7 +316,7 @@ function ContentPico({ rows, onClickRow }) {
             <div className="msec-title" style={{ marginTop: 24 }}>Registros filtrados ({filtered.length})</div>
             {filtered.length === 0
               ? <div className="mempty">Nenhum registro</div>
-              : <MTable rows={filtered} onClickRow={onClickRow} />
+              : <MTable rows={filtered} onClickRow={onClickRow} selectedRowId={selectedRowId} />
             }
           </>
         )}
@@ -229,7 +326,7 @@ function ContentPico({ rows, onClickRow }) {
 }
 
 /* ── Conteúdo: Feedbacks / Satisfação ── */
-function ContentFeedback({ rows, onClickRow }) {
+function ContentFeedback({ rows, onClickRow, selectedRowId }) {
   const [filter, setFilter] = useState(null)
   const comFeedback = rows.filter(r => r.feedback_empresa != null && r.feedback_empresa !== '')
   const positivos = comFeedback.filter(r => normFeedback(r.feedback_empresa) === 'Positivo')
@@ -289,7 +386,7 @@ function ContentFeedback({ rows, onClickRow }) {
         <div className="msec-title">{filter === 'pos' ? 'Positivos' : filter === 'neg' ? 'Negativos' : filter === 'neutro' ? 'Neutros' : filter === 'sem' ? 'Sem feedback' : 'Todos com feedback'} ({filtered.length})</div>
         {filtered.length === 0
           ? <div className="mempty">Nenhum registro nesta categoria</div>
-          : <MTable rows={filtered} onClickRow={onClickRow} />
+          : <MTable rows={filtered} onClickRow={onClickRow} selectedRowId={selectedRowId} />
         }
       </div>
     </>
@@ -358,7 +455,7 @@ function ContentClientes({ rows }) {
 }
 
 /* ── Conteúdo: Reclamações ── */
-function ContentReclamacoes({ rows, onClickRow }) {
+function ContentReclamacoes({ rows, onClickRow, selectedRowId }) {
   const [filter, setFilter] = useState('recl')
   const reclamacoes = rows.filter(r => normTipo(r.tipo_atendimento) === 'Reclamacao')
   const outros = rows.filter(r => normTipo(r.tipo_atendimento) !== 'Reclamacao')
@@ -400,7 +497,7 @@ function ContentReclamacoes({ rows, onClickRow }) {
         <div className="msec-title">{filter === 'recl' ? 'Reclamações' : 'Todos'} ({filtered.length})</div>
         {filtered.length === 0
           ? <div className="mempty">Nenhuma reclamação neste período</div>
-          : <MTable rows={filtered} onClickRow={onClickRow} />
+          : <MTable rows={filtered} onClickRow={onClickRow} selectedRowId={selectedRowId} />
         }
       </div>
     </>
@@ -408,7 +505,7 @@ function ContentReclamacoes({ rows, onClickRow }) {
 }
 
 /* ── Conteúdo: Aniversários ── */
-function ContentAniversarios({ rows, onClickRow }) {
+function ContentAniversarios({ rows, onClickRow, selectedRowId }) {
   const [filter, setFilter] = useState('aniv')
   const aniversarios = rows.filter(r => r.eh_aniversario)
   const naoAniv = rows.filter(r => !r.eh_aniversario)
@@ -430,7 +527,7 @@ function ContentAniversarios({ rows, onClickRow }) {
         <div className="msec-title">{filter === 'aniv' ? 'Aniversariantes' : 'Todos'} ({filtered.length})</div>
         {filtered.length === 0
           ? <div className="mempty">Nenhum aniversário neste período</div>
-          : <MTable rows={filtered} onClickRow={onClickRow} />
+          : <MTable rows={filtered} onClickRow={onClickRow} selectedRowId={selectedRowId} />
         }
       </div>
     </>
@@ -438,7 +535,7 @@ function ContentAniversarios({ rows, onClickRow }) {
 }
 
 /* ── Conteúdo: Interesse por Programação ── */
-function ContentProgramacao({ rows, onClickRow }) {
+function ContentProgramacao({ rows, onClickRow, selectedRowId }) {
   const [filter, setFilter] = useState('prog')
   const progRows = rows.filter(r => normTipo(r.tipo_atendimento) === 'Programacao')
   const total = rows.length || 1
@@ -487,7 +584,7 @@ function ContentProgramacao({ rows, onClickRow }) {
         <div className="msec-title">{filter === 'prog' ? 'Programação' : 'Todos'} ({filtered.length})</div>
         {filtered.length === 0
           ? <div className="mempty">Nenhuma consulta de programação neste período</div>
-          : <MTable rows={filtered} onClickRow={onClickRow} />
+          : <MTable rows={filtered} onClickRow={onClickRow} selectedRowId={selectedRowId} />
         }
       </div>
     </>
@@ -495,7 +592,7 @@ function ContentProgramacao({ rows, onClickRow }) {
 }
 
 /* ── Conteúdo: Fidelização de Clientes ── */
-function ContentFidelizacao({ rows, onClickRow }) {
+function ContentFidelizacao({ rows, onClickRow, selectedRowId }) {
   const [filter, setFilter] = useState(null)
   const novos = rows.filter(r => !r.cliente_retornante)
   const retornantes = rows.filter(r => !!r.cliente_retornante)
@@ -560,7 +657,7 @@ function ContentFidelizacao({ rows, onClickRow }) {
         <div className="msec-title">{filter === 'novos' ? 'Clientes novos' : filter === 'retornantes' ? 'Clientes retornantes' : 'Todos os registros'} ({filtered.length})</div>
         {filtered.length === 0
           ? <div className="mempty">Nenhum registro nesta categoria</div>
-          : <MTable rows={filtered} onClickRow={onClickRow} />
+          : <MTable rows={filtered} onClickRow={onClickRow} selectedRowId={selectedRowId} />
         }
       </div>
     </>
@@ -568,7 +665,7 @@ function ContentFidelizacao({ rows, onClickRow }) {
 }
 
 /* ── Conteúdo: Tipo de Atendimento ── */
-function ContentTipo({ rows, tipo, onClickRow }) {
+function ContentTipo({ rows, tipo, onClickRow, selectedRowId }) {
   const [filter, setFilter] = useState('tipo')
   const tipoRows = tipo === 'Sem dados' ? rows : rows.filter(r => normTipo(r.tipo_atendimento) === tipo)
   const outros = rows.filter(r => normTipo(r.tipo_atendimento) !== tipo)
@@ -585,7 +682,7 @@ function ContentTipo({ rows, tipo, onClickRow }) {
         <div className="msec-title">{filter === 'tipo' ? tipo : 'Todos'} ({filtered.length})</div>
         {filtered.length === 0
           ? <div className="mempty">Nenhum atendimento deste tipo no período</div>
-          : <MTable rows={filtered} onClickRow={onClickRow} />
+          : <MTable rows={filtered} onClickRow={onClickRow} selectedRowId={selectedRowId} />
         }
       </div>
     </>
@@ -593,7 +690,7 @@ function ContentTipo({ rows, tipo, onClickRow }) {
 }
 
 /* ── Conteúdo: Turno (Dia/Tarde x Noite por dia) ── */
-function ContentTurno({ rows, dia, onClickRow }) {
+function ContentTurno({ rows, dia, onClickRow, selectedRowId }) {
   const [filter, setFilter] = useState(null)
   const allFiltered = dia ? rows.filter(r => {
     const diaRow = DIAS_ABREV[new Date(r.data + 'T12:00:00').getDay()]
@@ -616,7 +713,7 @@ function ContentTurno({ rows, dia, onClickRow }) {
         <div className="msec-title">{filter === 'almoco' ? 'Almoco / Happy Hour' : filter === 'jantar' ? 'Jantar' : 'Todos os turnos'} ({filtered.length})</div>
         {filtered.length === 0
           ? <div className="mempty">Nenhum atendimento{dia ? ` em ${dia}` : ''}</div>
-          : <MTable rows={filtered} onClickRow={onClickRow} />
+          : <MTable rows={filtered} onClickRow={onClickRow} selectedRowId={selectedRowId} />
         }
       </div>
     </>
@@ -864,7 +961,23 @@ function ContentConversa({ row }) {
         {loading ? (
           <div className="mempty">Carregando mensagens...</div>
         ) : !mensagens || mensagens.length === 0 ? (
-          <div className="mempty">Histórico de mensagens não disponível para este atendimento.</div>
+          <div style={{
+            display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+            textAlign: 'center', padding: '32px 24px', margin: '20px auto', maxWidth: 320,
+            borderRadius: 14, border: '1px solid rgba(232,160,32,0.3)',
+            background: 'rgba(232,160,32,0.06)',
+          }}>
+            <span style={{ fontSize: 28, marginBottom: 10 }}>📋</span>
+            <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--t1)', marginBottom: 6 }}>
+              Histórico indisponível
+            </div>
+            <div style={{ fontSize: 11, color: 'var(--t2)', maxWidth: 260, lineHeight: 1.5, marginBottom: 8 }}>
+              O histórico de conversas é mantido por 10 dias. Este registro é anterior a esse período.
+            </div>
+            <div style={{ fontSize: 10, fontWeight: 600, color: '#e8a020' }}>
+              Caso precise de acesso a mensagens mais antigas, contate a equipe da Agência RDG.
+            </div>
+          </div>
         ) : (
           mensagens.map((m, i) => {
             const isHelena = m.remetente === 'helena'
@@ -881,9 +994,6 @@ function ContentConversa({ row }) {
                   {tipoBadge(m.tipo_mensagem)}
                   {isMatch ? highlightText(text, currentRefIdx) : text}
                 </div>
-                {isHelena && m.tools_usadas && (
-                  <div className="chat-tools">Tools: {m.tools_usadas}</div>
-                )}
               </div>
             )
           })
@@ -894,8 +1004,17 @@ function ContentConversa({ row }) {
 }
 
 /* ── Conteúdo: Aguardando Atendente ── */
-function ContentAguardando({ rows, onClickRow }) {
+function ContentAguardando({ rows, onClickRow, refetchData, selectedRowId }) {
+  const [marking, setMarking] = useState(null)
   const aguardando = rows.filter(r => r.necessita_humano)
+
+  async function handleMarkAtendido(id) {
+    setMarking(id)
+    try {
+      await supabase.from('alto_hirant_dashboard').update({ necessita_humano: false, atendido_por_humano: true, data_atendimento_humano: new Date().toISOString() }).eq('id', id)
+      if (refetchData) refetchData()
+    } finally { setMarking(null) }
+  }
 
   function mask(tel) {
     if (!tel || tel.length < 4) return '***'
@@ -928,11 +1047,21 @@ function ContentAguardando({ rows, onClickRow }) {
                   </tr>
                 </thead>
                 <tbody>
-                  {aguardando.map((r, i) => (
-                    <tr key={i} style={{ cursor: 'pointer' }}
+                  {aguardando.map((r, i) => {
+                    const isSelected = selectedRowId != null && r.id === selectedRowId
+                    return (
+                    <tr key={i} style={{
+                      cursor: 'pointer',
+                      background: isSelected ? 'rgba(232,160,32,0.18)' : undefined,
+                      outline: isSelected ? '1px solid rgba(232,160,32,0.5)' : undefined,
+                      transition: 'background 0.2s',
+                    }}
                       onClick={() => onClickRow && onClickRow(r)}
                       title="Clique para ver conversa">
-                      <td style={{ fontFamily: 'monospace', fontSize: 12 }}>{mask(r.numero_cliente)}</td>
+                      <td style={{ fontFamily: 'monospace', fontSize: 12 }}>
+                        {mask(r.numero_cliente)}
+                        <CopyPhone numero={r.numero_cliente} />
+                      </td>
                       <td style={{ fontWeight: 600 }}>{r.nome_cliente || 'Não informado'}</td>
                       <td><TipoBadge tipo={normTipo(r.tipo_atendimento)} /></td>
                       <td style={{ textAlign: 'center' }}>{r.qtd_pessoas || '—'}</td>
@@ -951,6 +1080,70 @@ function ContentAguardando({ rows, onClickRow }) {
                         }
                       </td>
                     </tr>
+                  )})}
+                </tbody>
+              </table>
+            </div>
+          )
+        }
+      </div>
+    </>
+  )
+}
+
+
+/* ── Conteúdo: Concluído pelo Atendente ── */
+function ContentConcluido({ rows, onClickRow, refetchData }) {
+  const [marking, setMarking] = useState(null)
+  const concluidos = rows.filter(r => r.atendido_por_humano)
+
+  function mask(tel) {
+    if (!tel || tel.length < 4) return '***'
+    return '***' + tel.slice(-4)
+  }
+
+  async function handleReabrir(id) {
+    setMarking(id)
+    try {
+      await supabase.from('alto_hirant_dashboard').update({ necessita_humano: true, atendido_por_humano: false, data_atendimento_humano: null }).eq('id', id)
+      if (refetchData) refetchData()
+    } finally { setMarking(null) }
+  }
+
+  function fmtAtendimento(ts) {
+    if (!ts) return '—'
+    const d = new Date(ts)
+    return d.toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })
+  }
+
+  return (
+    <>
+      <div className="mstats">
+        <StatRow value={concluidos.length} label="Resolvidos" sub="pelo atendente humano" />
+        <StatRow value={rows.length} label="Total período" />
+      </div>
+      <div className="modal-scroll">
+        <div className="msec-title">Conversas resolvidas pelo atendente ({concluidos.length})</div>
+        {concluidos.length === 0
+          ? <div className="mempty">Nenhuma conversa resolvida por atendente neste período</div>
+          : (
+            <div className="tscr">
+              <table>
+                <thead>
+                  <tr><th>Telefone</th><th>Cliente</th><th>Tipo</th><th>Data</th><th>Hora</th><th>Atendido em</th><th>Reserva</th><th>Ação</th></tr>
+                </thead>
+                <tbody>
+                  {concluidos.map((r, i) => (
+                    <tr key={i} style={{ cursor: 'pointer' }} onClick={() => onClickRow && onClickRow(r)} title="Clique para ver conversa">
+                      <td style={{ fontFamily: 'monospace', fontSize: 12 }}>{mask(r.numero_cliente)}<CopyPhone numero={r.numero_cliente} /></td>
+                      <td style={{ fontWeight: 600 }}>{r.nome_cliente || 'Não informado'}</td>
+                      <td><TipoBadge tipo={normTipo(r.tipo_atendimento)} /></td>
+                      <td style={{ fontSize: 11, color: 'var(--t2)', whiteSpace: 'nowrap' }}>{fmtData(r.data)}</td>
+                      <td style={{ fontFamily: "'Playfair Display',serif", fontWeight: 700, fontSize: 13 }}>{fmt(r.hora)}</td>
+                      <td style={{ fontSize: 11, color: 'var(--t2)', whiteSpace: 'nowrap' }}>{fmtAtendimento(r.data_atendimento_humano)}</td>
+                      <td>{r.reserva_solicitada ? <span style={{ color: 'var(--success)', fontWeight: 600, fontSize: 11 }}>✓ Reserva</span> : <span style={{ color: 'var(--t3)', fontSize: 11 }}>—</span>}</td>
+                      <td><button disabled={marking === r.id} onClick={(e) => { e.stopPropagation(); handleReabrir(r.id) }} style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.04em', textTransform: 'uppercase', padding: '4px 10px', borderRadius: 8, border: '1px solid rgba(245,158,11,0.4)', background: 'linear-gradient(135deg, rgba(245,158,11,0.08), rgba(245,158,11,0.15))', color: '#F59E0B', cursor: 'pointer', transition: 'all 0.18s', opacity: marking === r.id ? 0.5 : 1 }}>{marking === r.id ? '...' : 'REABRIR'}</button></td>
+                    </tr>
                   ))}
                 </tbody>
               </table>
@@ -964,7 +1157,8 @@ function ContentAguardando({ rows, onClickRow }) {
 
 /* ══ MODAL REGISTRY (factory pattern) ════════════════════════════════════════ */
 const MODAL_REGISTRY = {
-  aguardando:   { icon: '🚨', title: 'Aguardando Atendente',     sub: 'Conversas que necessitam intervenção humana', Component: ContentAguardando, prop: 'rows' },
+  aguardando:   { icon: '🔔', title: 'Aguardando Atendente',     sub: 'Conversas que necessitam intervenção humana', Component: ContentAguardando, prop: 'rows' },
+  concluido:    { icon: '✅', title: 'Concluído pelo Atendente',  sub: 'Conversas resolvidas por atendente humano',   Component: ContentConcluido,  prop: 'rows' },
   total:        { icon: '💬', title: 'Total de Interações',      sub: 'Todos os registros do período',       Component: ContentTotal,        prop: 'rows' },
   feedback:     { icon: '⭐', title: 'Satisfação do Cliente',    sub: 'Índice e feedbacks reais',            Component: ContentFeedback,     prop: 'rows' },
   clientes:     { icon: '👤', title: 'Clientes Únicos',          sub: 'Agrupados por número de telefone',    Component: ContentClientes,     prop: 'rows' },
@@ -988,14 +1182,14 @@ function getSubtitle(type, data, meta) {
   return meta.sub
 }
 
-function getContentProps(type, data, rows) {
+function getContentProps(type, data, rows, selectedRowId) {
   const entry = MODAL_REGISTRY[type]
   if (!entry) return {}
-  if (type === 'tipo') return { rows, tipo: data }
-  if (type === 'turno') return { rows, dia: data }
+  if (type === 'tipo') return { rows, tipo: data, selectedRowId }
+  if (type === 'turno') return { rows, dia: data, selectedRowId }
   if (type === 'registro') return { row: data }
   if (type === 'conversa') return { row: data }
-  return { rows }
+  return { rows, selectedRowId }
 }
 
 /* ══ FOCUS TRAP HOOK ═════════════════════════════════════════════════════════ */
@@ -1037,7 +1231,7 @@ function useFocusTrap(boxRef, isOpen) {
 }
 
 /* ══ MODAL BASE ═══════════════════════════════════════════════════════════════ */
-export function Modal({ state, onClose, rawRows }) {
+export function Modal({ state, onClose, rawRows, refetch, selectedRowId }) {
   const boxRef = useRef(null)
   const bodyRef = useRef(null)
   const drag = useRef(null)
@@ -1139,7 +1333,7 @@ export function Modal({ state, onClose, rawRows }) {
     : getSubtitle(state.type, state.data, entry)
   const contentProps = showConversa
     ? { row: conversaRow }
-    : getContentProps(state.type, state.data, rows)
+    : { ...getContentProps(state.type, state.data, rows, selectedRowId), refetchData: refetch }
 
   const isConversaView = activeType === 'conversa'
   const boxStyle = size.w
@@ -1153,7 +1347,7 @@ export function Modal({ state, onClose, rawRows }) {
       aria-modal="true"
       aria-label={entry.title}
       onClick={e => { if (e.target === e.currentTarget && !justResized.current) onClose() }}>
-      <div className="modal-box" ref={boxRef} style={boxStyle}>
+      <div className={`modal-box${showConversa ? ' modal-swap' : ''}`} ref={boxRef} style={boxStyle}>
 
         <div className="modal-flame" />
 

@@ -108,7 +108,20 @@ export function buildDonut(rows) {
     return [{ name: 'Sem dados', value: 1, color: '#2A2A2A', pct: '—' }]
   }
   const counts = { Reservas: 0, Programacao: 0, Cardapio: 0, Localizacao: 0, Geral: 0, Aniversario: 0, Reclamacao: 0, Outros: 0 }
-  rows.forEach(r => { counts[normTipo(r.tipo_atendimento)]++ })
+  rows.forEach(r => {
+    // Reserva uses the boolean field; all other categories use tipo_atendimento
+    if (r.reserva_solicitada === true) {
+      counts['Reservas']++
+    } else {
+      const tipo = normTipo(r.tipo_atendimento)
+      // Only increment non-Reservas buckets via tipo_atendimento
+      if (tipo !== 'Reservas') {
+        counts[tipo] = (counts[tipo] !== undefined ? counts[tipo] : 0) + 1
+      } else {
+        counts['Outros']++
+      }
+    }
+  })
   const total = rows.length
   return DONUT_ORDER
     .filter(k => counts[k] > 0)

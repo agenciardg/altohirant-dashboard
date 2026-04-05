@@ -45,11 +45,37 @@ html[data-theme="dark"] .kc:hover{
 /* ── Alert state (Aguardando Atendente) ── */
 .kc--alert{outline:1px solid rgba(232,160,32,0.35);outline-offset:-1px}
 .kc--alert::before{background:linear-gradient(90deg,#E85D04,#e8a020,#F97316) !important}
-.kc--alert .kval{color:#E85D04}
+.kc--alert .kval{color:#E85D04;text-shadow:0 0 12px rgba(232,160,32,0.3)}
+.kc--alert .kico{filter:drop-shadow(0 0 6px rgba(232,160,32,0.6));animation:kpi-bell-pulse 2s ease-in-out infinite;will-change:filter;display:inline-block}
+@keyframes kpi-bell-pulse{0%,100%{filter:drop-shadow(0 0 4px rgba(232,160,32,0.4))}50%{filter:drop-shadow(0 0 10px rgba(232,160,32,0.8))}}
 
 /* ── Alert highlight row (full-width card) ── */
 .g1-alert{margin-bottom:8px}
 .g1-alert .card{max-width:100%}
+
+/* ── KPIs prioritários (Aguardando + Concluído) ── */
+.kpi-priority .card{
+  border:1px solid rgba(232,93,4,0.25);
+  background:linear-gradient(135deg, var(--card) 0%, rgba(232,93,4,0.04) 100%);
+  transition:none;
+}
+.kpi-priority .card::before{
+  height:4px !important;
+  background:linear-gradient(90deg,#E85D04,#e8a020,#F97316) !important;
+}
+.kpi-priority .card .kval{
+  font-size:34px;
+  color:#E85D04;
+  text-shadow:0 0 16px rgba(232,93,4,0.3);
+}
+.kpi-priority .card .kico{
+  font-size:16px;
+  filter:drop-shadow(0 0 6px rgba(232,160,32,0.5));
+}
+.kpi-priority .card .klbl{
+  font-size:10px;
+  letter-spacing:.16em;
+}
 
 .klbl{display:flex;align-items:center;gap:5px;font-size:9px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--t2);transition:color .35s}
 .kico{font-size:13px}

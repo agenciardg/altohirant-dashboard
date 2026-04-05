@@ -1,9 +1,20 @@
-import { useMemo, useEffect, useRef, memo } from 'react'
+import { useMemo, useEffect, useRef, memo, useState } from 'react'
 import { DIAS_ABREV } from '../../lib/constants'
 import { isoDate } from '../../lib/dataProcessors/computeCharts'
 
 function MiniCalendarInner({ monthDrill, onSelectWeek, onSelectDay, onClose, rawRows }) {
   const ref = useRef(null)
+  const [viewYear, setViewYear] = useState(new Date().getFullYear())
+  const [viewMonth, setViewMonth] = useState(new Date().getMonth())
+
+  const goPrev = () => {
+    if (viewMonth === 0) { setViewYear(y => y - 1); setViewMonth(11) }
+    else setViewMonth(m => m - 1)
+  }
+  const goNext = () => {
+    if (viewMonth === 11) { setViewYear(y => y + 1); setViewMonth(0) }
+    else setViewMonth(m => m + 1)
+  }
 
   // Close on outside click
   useEffect(() => {
@@ -22,9 +33,9 @@ function MiniCalendarInner({ monthDrill, onSelectWeek, onSelectDay, onClose, raw
   }, [onClose])
 
   const { weeks, monthLabel, today, daysWithData } = useMemo(() => {
+    const year = viewYear
+    const month = viewMonth
     const now = new Date()
-    const year = now.getFullYear()
-    const month = now.getMonth()
     const firstOfMonth = new Date(year, month, 1)
     const dowFirst = firstOfMonth.getDay()
     const daysInMonth = new Date(year, month + 1, 0).getDate()
@@ -63,7 +74,7 @@ function MiniCalendarInner({ monthDrill, onSelectWeek, onSelectDay, onClose, raw
       today: todayIso,
       daysWithData: dataSet,
     }
-  }, [rawRows])
+  }, [rawRows, viewYear, viewMonth])
 
   const selWeek = monthDrill.level === 'week' ? monthDrill.week
     : monthDrill.level === 'day' ? monthDrill.week : null
@@ -73,9 +84,19 @@ function MiniCalendarInner({ monthDrill, onSelectWeek, onSelectDay, onClose, raw
     <div ref={ref} className="mini-cal">
       {/* Header */}
       <div className="mini-cal__header">
-        <span style={{ fontFamily: "'Playfair Display', serif", fontWeight: 700, fontSize: 13, color: 'var(--t1)' }}>
+        <button onClick={goPrev}
+          disabled={viewYear === 2026 && viewMonth === 0}
+          style={{ background: 'none', border: 'none', color: viewYear === 2026 && viewMonth === 0 ? 'var(--t3)' : '#E85D04', cursor: viewYear === 2026 && viewMonth === 0 ? 'default' : 'pointer', fontSize: 14, padding: '2px 6px', opacity: viewYear === 2026 && viewMonth === 0 ? 0.3 : 1 }}>
+          ◀
+        </button>
+        <span style={{ fontFamily: "'Playfair Display', serif", fontWeight: 700, fontSize: 13, color: 'var(--t1)', minWidth: 130, textAlign: 'center' }}>
           {monthLabel}
         </span>
+        <button onClick={goNext}
+          disabled={viewYear === 2026 && viewMonth === 11}
+          style={{ background: 'none', border: 'none', color: viewYear === 2026 && viewMonth === 11 ? 'var(--t3)' : '#E85D04', cursor: viewYear === 2026 && viewMonth === 11 ? 'default' : 'pointer', fontSize: 14, padding: '2px 6px', opacity: viewYear === 2026 && viewMonth === 11 ? 0.3 : 1 }}>
+          ▶
+        </button>
         <button onClick={onClose} style={{
           background: 'none', border: 'none', color: 'var(--t2)', cursor: 'pointer',
           fontSize: 14, padding: '2px 4px', lineHeight: 1,

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { supabase } from './supabase'
 import { computeKPIs } from './dataProcessors/computeKPIs'
 import { computeCharts, isoDate, subDays } from './dataProcessors/computeCharts'
@@ -110,6 +110,7 @@ const POLL_INTERVAL = 30_000 // 30 segundos
 
 export function useDashboardData(tab) {
   const [state, setState] = useState({ loading: true, data: null, error: null })
+  const loadFnRef = useRef(null)
 
   useEffect(() => {
     setState(s => ({ ...s, loading: true }))
@@ -161,6 +162,7 @@ export function useDashboardData(tab) {
       }
     }
 
+    loadFnRef.current = load
     load(false)
 
     // Polling automático para manter dados atualizados
@@ -169,5 +171,9 @@ export function useDashboardData(tab) {
     return () => { cancelled = true; clearInterval(interval) }
   }, [tab])
 
-  return state
+  const refetch = useCallback(() => {
+    if (loadFnRef.current) loadFnRef.current(false)
+  }, [])
+
+  return { ...state, refetch }
 }

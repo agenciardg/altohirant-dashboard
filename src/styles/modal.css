@@ -281,7 +281,8 @@
 }
 .chat-helena {
   align-self:flex-end;
-  background:#3d2a1a;
+  background:rgba(251,207,60,0.18);
+  border:1px solid rgba(251,207,60,0.35);
   border-bottom-right-radius:4px;
 }
 .chat-bubble-header {
@@ -306,6 +307,12 @@
   font-size:10px; color:var(--t3); margin-top:4px;
   font-style:italic;
 }
+
+@keyframes modalSwap {
+  from { opacity: 0.6; }
+  to   { opacity: 1; }
+}
+.modal-swap { animation: modalSwap 0.18s ease forwards; }
 
 /* Light theme overrides */
 [data-theme="light"] .chat-cliente { background:#e5e7eb; }

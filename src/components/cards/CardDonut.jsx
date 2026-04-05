@@ -24,6 +24,7 @@ function CardDonutInner({ data, filterType, setFilterType, ak, loading }) {
                 const isAct = filterType === d.name
                 return (
                   <div key={i} className={`lr${isAct ? ' lr-act' : ''}`}
+                    style={isAct ? { background: `${d.color}22`, borderLeft: `3px solid ${d.color}` } : { borderLeft: '3px solid transparent' }}
                     onClick={() => setFilterType(isAct ? null : d.name)}>
                     <div className="lft">
                       <div className="ld" style={{ background: d.color, opacity: filterType && !isAct ? 0.3 : 1, transition: 'opacity 0.2s' }} />

@@ -100,8 +100,8 @@
 /* ── Hero logo wrap — 160px desktop ── */
 .login-logo-wrap {
   position: relative;
-  width: 160px;
-  height: 160px;
+  width: 220px;
+  height: 220px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -109,8 +109,8 @@
 
 /* ── Hero logo image — drop-shadow glow, NO border ── */
 .login-logo-img {
-  width: 160px;
-  height: 160px;
+  width: 220px;
+  height: 220px;
   border-radius: 50%;
   object-fit: cover;
   border: none;
