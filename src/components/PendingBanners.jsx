@@ -3,6 +3,86 @@ import { supabase } from '../lib/supabase'
 import { isoDate, subDays } from '../lib/dataProcessors/computeCharts'
 import { normTipo, normTurno } from '../lib/utils'
 import { TipoBadge, TurnoBadge } from './Badges'
+import { useRef } from 'react'
+
+function PendingConversa({ row }) {
+  const [mensagens, setMensagens] = useState(null)
+  const [loading, setLoading] = useState(true)
+  const scrollRef = useRef(null)
+
+  useEffect(() => {
+    if (!row?.id) { setLoading(false); return }
+    let cancelled = false
+    async function fetch() {
+      setLoading(true)
+      const { data, error } = await supabase
+        .from('alto_hirant_mensagens')
+        .select('*')
+        .eq('dashboard_id', row.id)
+        .order('hora', { ascending: true })
+      if (!cancelled) {
+        setMensagens(error ? [] : (data || []))
+        setLoading(false)
+      }
+    }
+    fetch()
+    return () => { cancelled = true }
+  }, [row?.id])
+
+  useEffect(() => {
+    if (mensagens && scrollRef.current) scrollRef.current.scrollTop = 0
+  }, [mensagens])
+
+  const fmtH = (h) => {
+    if (!h) return '--:--'
+    try {
+      const d = new Date(h)
+      if (isNaN(d)) return h.slice(11, 16) || '--:--'
+      return d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+    } catch { return '--:--' }
+  }
+
+  if (loading) return <div style={{ textAlign: 'center', color: 'var(--t2)', padding: 24 }}>Carregando...</div>
+  if (!mensagens || mensagens.length === 0) {
+    return (
+      <div style={{
+        display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+        textAlign: 'center', padding: '32px 24px', margin: '20px auto', maxWidth: 320,
+        borderRadius: 14, border: '1px solid rgba(232,160,32,0.3)', background: 'rgba(232,160,32,0.06)',
+      }}>
+        <span style={{ fontSize: 28, marginBottom: 10 }}>📋</span>
+        <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--t1)', marginBottom: 6 }}>Histórico indisponível</div>
+        <div style={{ fontSize: 11, color: 'var(--t2)', maxWidth: 260, lineHeight: 1.5 }}>
+          O histórico de conversas é mantido por 10 dias. Este registro é anterior a esse período.
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div ref={scrollRef} style={{ overflowY: 'auto', flex: 1, display: 'flex', flexDirection: 'column', gap: 8, padding: '8px 0' }}>
+      {mensagens.map((m, i) => {
+        const isHelena = m.remetente === 'helena'
+        return (
+          <div key={m.id || i} style={{
+            alignSelf: isHelena ? 'flex-end' : 'flex-start',
+            maxWidth: '80%', padding: '8px 12px', borderRadius: 12,
+            background: isHelena ? 'rgba(251,207,60,0.18)' : 'var(--bg1, #2a2a2a)',
+            border: isHelena ? '1px solid rgba(251,207,60,0.35)' : '1px solid var(--border)',
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, marginBottom: 3 }}>
+              <span style={{ fontSize: 10, fontWeight: 700, color: isHelena ? '#F97316' : '#7dd3fc' }}>
+                {isHelena ? 'Helena' : 'Cliente'}
+              </span>
+              <span style={{ fontSize: 9, color: 'var(--t3)' }}>{fmtH(m.hora)}</span>
+            </div>
+            <div style={{ fontSize: 12, color: 'var(--t1)', lineHeight: 1.5 }}>{m.conteudo}</div>
+          </div>
+        )
+      })}
+    </div>
+  )
+}
 
 function fmtData(data) {
   if (!data) return '--'
@@ -15,6 +95,51 @@ function fmt(hora) {
 }
 
 function PendingModal({ rows, title, onClose, onAtendido }) {
+  const [conversaRow, setConversaRow] = useState(null)
+
+  if (conversaRow) {
+    return (
+      <div
+        style={{
+          position: 'fixed', inset: 0, zIndex: 9999,
+          background: 'rgba(0,0,0,0.7)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          backdropFilter: 'blur(4px)',
+        }}
+        onClick={onClose}
+      >
+        <div
+          style={{
+            background: 'var(--card)',
+            border: '1px solid var(--border)',
+            borderRadius: 16,
+            padding: '24px 28px',
+            maxWidth: 700, width: '70vw', maxHeight: '80vh',
+            display: 'flex', flexDirection: 'column', gap: 16,
+          }}
+          onClick={e => e.stopPropagation()}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <button onClick={() => setConversaRow(null)} style={{
+                background: 'none', border: 'none', color: '#E85D04',
+                cursor: 'pointer', fontSize: 16, padding: '2px 6px',
+              }}>←</button>
+              <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--t1)' }}>
+                {conversaRow.nome_cliente || conversaRow.numero_cliente || 'Cliente'}
+              </span>
+            </div>
+            <button onClick={onClose} style={{
+              background: 'none', border: 'none', color: 'var(--t3)',
+              cursor: 'pointer', fontSize: 18, padding: '2px 6px', lineHeight: 1,
+            }}>✕</button>
+          </div>
+          <PendingConversa row={conversaRow} />
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div
       style={{
@@ -78,7 +203,10 @@ function PendingModal({ rows, title, onClose, onAtendido }) {
                   <tr key={r.id} style={{
                     borderBottom: '1px solid var(--border)',
                     transition: 'background 0.15s',
-                  }}>
+                    cursor: 'pointer',
+                  }}
+                  onClick={() => setConversaRow(r)}
+                  title="Clique para ver conversa">
                     <td style={{ padding: '8px 10px', color: 'var(--t2)', whiteSpace: 'nowrap' }}>{fmtData(r.data)}</td>
                     <td style={{ padding: '8px 10px', fontWeight: 700, fontSize: 13, fontFamily: "'Playfair Display',serif", color: 'var(--t1)' }}>{fmt(r.hora)}</td>
                     <td style={{ padding: '8px 10px', fontWeight: 600, color: 'var(--t1)' }}>
@@ -88,7 +216,7 @@ function PendingModal({ rows, title, onClose, onAtendido }) {
                     <td style={{ padding: '8px 10px' }}><TurnoBadge turno={normTurno(r.turno)} /></td>
                     <td style={{ padding: '8px 10px' }}>
                       <button
-                        onClick={() => onAtendido(r.id)}
+                        onClick={(e) => { e.stopPropagation(); onAtendido(r.id) }}
                         style={{
                           background: 'linear-gradient(135deg, rgba(232,93,4,0.08), rgba(232,93,4,0.15))',
                           color: '#F97316', border: '1px solid rgba(232,93,4,0.4)',

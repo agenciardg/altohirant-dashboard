@@ -837,7 +837,7 @@ function ContentConversa({ row }) {
 
   useEffect(() => {
     if (mensagens && scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight
+      scrollRef.current.scrollTop = 0
     }
   }, [mensagens])
 
@@ -1006,7 +1006,9 @@ function ContentConversa({ row }) {
 /* ── Conteúdo: Aguardando Atendente ── */
 function ContentAguardando({ rows, onClickRow, refetchData, selectedRowId }) {
   const [marking, setMarking] = useState(null)
+  const [lastClickedId, setLastClickedId] = useState(null)
   const aguardando = rows.filter(r => r.necessita_humano)
+  const rowRefs = useRef({})
 
   async function handleMarkAtendido(id) {
     setMarking(id)
@@ -1020,6 +1022,13 @@ function ContentAguardando({ rows, onClickRow, refetchData, selectedRowId }) {
     if (!tel || tel.length < 4) return '***'
     return '***' + tel.slice(-4)
   }
+
+  useEffect(() => {
+    const id = lastClickedId || selectedRowId
+    if (id != null && rowRefs.current[id]) {
+      rowRefs.current[id].scrollIntoView({ behavior: 'smooth', block: 'center' })
+    }
+  }, [lastClickedId, selectedRowId])
 
   return (
     <>
@@ -1039,45 +1048,51 @@ function ContentAguardando({ rows, onClickRow, refetchData, selectedRowId }) {
                     <th>Telefone</th>
                     <th>Cliente</th>
                     <th>Tipo</th>
-                    <th>Pessoas</th>
-                    <th>Aniv.</th>
                     <th>Data</th>
                     <th>Hora</th>
-                    <th>Reserva</th>
+                    <th>Espera</th>
+                    <th>Ação</th>
                   </tr>
                 </thead>
                 <tbody>
                   {aguardando.map((r, i) => {
-                    const isSelected = selectedRowId != null && r.id === selectedRowId
+                    const isSelected = (lastClickedId || selectedRowId) != null && r.id === (lastClickedId || selectedRowId)
+                    const espera = calcEspera(r.data, r.hora)
                     return (
-                    <tr key={i} style={{
+                    <tr key={i}
+                      ref={el => { if (el) rowRefs.current[r.id] = el; else delete rowRefs.current[r.id] }}
+                      style={{
                       cursor: 'pointer',
                       background: isSelected ? 'rgba(232,160,32,0.18)' : undefined,
                       outline: isSelected ? '1px solid rgba(232,160,32,0.5)' : undefined,
                       transition: 'background 0.2s',
                     }}
-                      onClick={() => onClickRow && onClickRow(r)}
+                      onClick={() => { setLastClickedId(r.id); onClickRow && onClickRow(r) }}
                       title="Clique para ver conversa">
                       <td style={{ fontFamily: 'monospace', fontSize: 12 }}>
-                        {mask(r.numero_cliente)}
-                        <CopyPhone numero={r.numero_cliente} />
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 4 }}>
+                          <span>{mask(r.numero_cliente)}</span>
+                          <CopyPhone numero={r.numero_cliente} />
+                        </div>
                       </td>
                       <td style={{ fontWeight: 600 }}>{r.nome_cliente || 'Não informado'}</td>
                       <td><TipoBadge tipo={normTipo(r.tipo_atendimento)} /></td>
-                      <td style={{ textAlign: 'center' }}>{r.qtd_pessoas || '—'}</td>
-                      <td style={{ textAlign: 'center' }}>
-                        {r.eh_aniversario
-                          ? <span className="baniv" style={{ fontSize: 9, padding: '2px 7px' }}>Aniversário</span>
-                          : <span style={{ color: 'var(--t3)', fontSize: 11 }}>—</span>
-                        }
-                      </td>
                       <td style={{ fontSize: 11, color: 'var(--t2)', whiteSpace: 'nowrap' }}>{fmtData(r.data)}</td>
                       <td style={{ fontFamily: "'Playfair Display',serif", fontWeight: 700, fontSize: 13 }}>{fmt(r.hora)}</td>
                       <td>
-                        {r.reserva_solicitada
-                          ? <span style={{ color: 'var(--success)', fontWeight: 600, fontSize: 11 }}>✓ Reserva</span>
+                        {espera
+                          ? <span style={{ fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 20, background: espera.danger ? 'rgba(239,68,68,0.13)' : 'rgba(245,158,11,0.13)', color: espera.danger ? '#EF4444' : '#F59E0B' }}>{espera.text}</span>
                           : <span style={{ color: 'var(--t3)', fontSize: 11 }}>—</span>
                         }
+                      </td>
+                      <td>
+                        <button onClick={(e) => { e.stopPropagation(); handleMarkAtendido(r.id) }} style={{
+                          fontSize: 9, fontWeight: 700, letterSpacing: '0.04em', textTransform: 'uppercase',
+                          padding: '4px 10px', borderRadius: 8,
+                          border: '1px solid rgba(232,93,4,0.4)',
+                          background: 'linear-gradient(135deg, rgba(232,93,4,0.08), rgba(232,93,4,0.15))',
+                          color: '#F97316', cursor: 'pointer', transition: 'all 0.18s', whiteSpace: 'nowrap',
+                        }}>ATENDIDO</button>
                       </td>
                     </tr>
                   )})}
@@ -1239,6 +1254,7 @@ export function Modal({ state, onClose, rawRows, refetch, selectedRowId }) {
   const rows = rawRows || []
   const [size, setSize] = useState({ w: null, h: null })
   const [conversaRow, setConversaRow] = useState(null)
+  const [lastClickedRowId, setLastClickedRowId] = useState(null)
 
   useFocusTrap(boxRef, !!state.type)
 
@@ -1333,7 +1349,7 @@ export function Modal({ state, onClose, rawRows, refetch, selectedRowId }) {
     : getSubtitle(state.type, state.data, entry)
   const contentProps = showConversa
     ? { row: conversaRow }
-    : { ...getContentProps(state.type, state.data, rows, selectedRowId), refetchData: refetch }
+    : { ...getContentProps(state.type, state.data, rows, lastClickedRowId || selectedRowId), refetchData: refetch }
 
   const isConversaView = activeType === 'conversa'
   const boxStyle = size.w
@@ -1354,7 +1370,7 @@ export function Modal({ state, onClose, rawRows, refetch, selectedRowId }) {
         <div className="modal-hdr">
           <div className="modal-hdr-l">
             {showConversa && (
-              <button className="conversa-back" onClick={() => setConversaRow(null)} title="Voltar">←</button>
+              <button className="conversa-back" onClick={() => { setConversaRow(null) }} title="Voltar">←</button>
             )}
             <span className="modal-ico">{entry.icon}</span>
             <div>
@@ -1366,7 +1382,7 @@ export function Modal({ state, onClose, rawRows, refetch, selectedRowId }) {
         </div>
 
         <div className="modal-body" ref={bodyRef}>
-          <Component {...contentProps} onClickRow={showConversa ? undefined : setConversaRow} />
+          <Component {...contentProps} onClickRow={showConversa ? undefined : (row) => { setLastClickedRowId(row.id); setConversaRow(row) }} />
         </div>
 
         <div

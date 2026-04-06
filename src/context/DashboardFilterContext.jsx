@@ -23,6 +23,7 @@ function reducer(state, action) {
         filterType: null,
         activeDay: null,
         turnoFilter: null,
+        kpiCollapsed: false,
         monthDrill: { level: 'month' },
         selectedItem: null,
       }

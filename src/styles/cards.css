@@ -106,18 +106,18 @@ html[data-theme="dark"] .kc:hover{
 .cbdy{padding:6px 14px 10px}
 
 /* ── Donut legend ── */
-.ll{display:flex;flex-direction:column;gap:0;margin-top:4px}
+.ll{display:flex;flex-direction:column;gap:2px;margin-top:6px}
 .lr{
   display:flex;align-items:center;justify-content:space-between;
-  cursor:pointer;border-radius:8px;padding:3px 7px;margin:0 -7px;
+  cursor:pointer;border-radius:8px;padding:5px 8px;margin:0 -8px;
   transition:background .18s;
 }
 .lr:hover{background:rgba(232,93,4,0.07)}
 .lr.lr-act{background:rgba(232,93,4,0.12)}
-.ld{width:8px;height:8px;border-radius:50%;flex-shrink:0}
-.ll2{font-size:10px;font-weight:500;color:var(--t2);transition:color .35s}
-.lp{font-size:9px;color:var(--t3);margin-right:6px;transition:color .35s}
-.lv{font-family:'Playfair Display',serif;font-weight:700;font-size:13px;color:var(--t1);transition:color .35s}
+.ld{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.ll2{font-size:12px;font-weight:600;color:var(--t1);transition:color .35s}
+.lp{font-size:11px;font-weight:500;color:var(--t2);margin-right:6px;transition:color .35s}
+.lv{font-family:'Playfair Display',serif;font-weight:900;font-size:15px;color:#E85D04;transition:color .35s}
 .lft{display:flex;align-items:center;gap:8px}
 
 /* ── Bar legend (toggle buttons) ── */
@@ -197,8 +197,11 @@ tbody td{font-size:11px;font-weight:500;color:var(--t1);padding:5px 10px;transit
 @media (max-width: 900px) {
   .dashboard-hoje-grid {
     grid-template-columns: 1fr;
+    grid-template-rows: auto;
     grid-template-areas: "reservas" "detail" "donut" "turno";
   }
+  .dh-detail { position: static; }
+  .dh-detail > .detail-panel { position: static; max-height: none; }
 }
 
 /* ── Métricas compactas ── */

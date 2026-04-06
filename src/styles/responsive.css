@@ -90,25 +90,46 @@
   .tscr{max-height:180px}
 
   /* KPI strip */
-  .kpi-strip{padding:8px 12px;gap:12px}
-  .kpi-strip__item:not(:last-child){padding-right:12px}
-  .kpi-strip__val{font-size:14px}
+  .kpi-strip{padding:8px 10px;gap:6px 12px;flex-wrap:wrap;overflow-x:hidden}
+  .kpi-strip__item{gap:3px}
+  .kpi-strip__item:not(:last-child){padding-right:10px}
+  .kpi-strip__icon{font-size:10px}
+  .kpi-strip__val{font-size:13px}
 
   /* Filter chips */
   .fchips{margin-top:8px;gap:6px}
 
   /* Modal */
-  .modal-backdrop{padding:8px}
-  .modal-box{max-width:100%;max-height:92vh;border-radius:14px}
+  .modal-backdrop{padding:6px}
+  .modal-box{max-width:100% !important;max-height:95vh;height:95vh;border-radius:14px;min-width:unset !important;width:100% !important}
   .modal-hdr{padding:8px 14px}
-  .modal-body{padding:12px 14px 0}
+  .modal-body{padding:10px 12px 0}
   .modal-title{font-size:13px}
+  .modal-sub{font-size:8px}
   .mstats{flex-wrap:wrap}
   .mstat{min-width:calc(50% - 1px);padding:10px 8px}
   .mstat-val{font-size:22px}
   .mrow{flex-direction:column;gap:6px}
   .mrow-badges{max-width:none;justify-content:flex-start}
   .mreg-grid{grid-template-columns:1fr}
+
+  /* Conversa modal mobile */
+  .conversa-header-compact{padding:6px 10px}
+  .conversa-header-compact .conversa-header-row{gap:6px 10px;flex-wrap:wrap}
+  .conversa-header-compact .conversa-field{flex-direction:column;gap:1px}
+  .conversa-header-compact .conversa-label{font-size:7px}
+  .conversa-header-compact .conversa-value{font-size:10px}
+  .conversa-search-inline{width:100%;margin-top:4px}
+  .conversa-search-input{font-size:12px}
+  .chat-bubble{max-width:92%;font-size:11px;padding:8px 10px;border-radius:12px;word-break:break-word;overflow-wrap:break-word}
+  .conversa-container{overflow:hidden}
+  .conversa-chat{padding:4px 0 12px}
+
+  /* Tabela mobile */
+  .tscr{max-height:300px}
+  table{font-size:11px}
+  thead th{font-size:8px;padding:5px 6px}
+  tbody td{font-size:10px;padding:4px 6px}
 
   /* Footer */
   .ftr{margin-top:8px;padding:8px 0}
@@ -134,6 +155,8 @@
   .cb{padding:8px 10px}
   .settings-dropdown{min-width:calc(100vw - 24px);right:-12px}
   .modal-backdrop{padding:4px}
-  .modal-box{border-radius:10px}
-  .chat-bubble{max-width:90%;font-size:12px;padding:8px 12px}
+  .modal-box{border-radius:10px;height:96vh;max-height:96vh}
+  .chat-bubble{max-width:92%;font-size:11px;padding:7px 10px}
+  thead th{font-size:7px;padding:4px 5px}
+  tbody td{font-size:9px;padding:3px 5px}
 }

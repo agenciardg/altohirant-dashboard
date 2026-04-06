@@ -366,16 +366,41 @@ export default function App() {
               </button>
             ))}
           </div>
-          {!isHoje && (
-            <button className="kpi-toggle" onClick={() => dispatch(toggleKpiCollapsed())}>
-              {kpiCollapsed ? '▼ Expandir KPIs' : '▲ Minimizar KPIs'}
-            </button>
-          )}
+          <button className="kpi-toggle" onClick={() => dispatch(toggleKpiCollapsed())}>
+            {kpiCollapsed ? '▼ Expandir KPIs' : '▲ Minimizar KPIs'}
+          </button>
         </div>
 
         {/* ── Tab Panels (grid overlap — zero layout shift) ── */}
         <div className="tab-panels">
           <div className={`tab-panel${isHoje ? '' : ' tab-panel--hidden'}`}>
+            {kpiCollapsed ? (
+              <div className="kpi-strip" style={{ marginTop: 8 }}>
+                {[
+                  { icon: '🔔', label: 'Aguard.', value: d.kpis.aguardando?.value || '0', delta: d.kpis.aguardando?.delta, deltaInvert: true },
+                  { icon: '✅', label: 'Concl.', value: d.kpis.concluido?.value || '0', delta: d.kpis.concluido?.delta, deltaInvert: false },
+                  { icon: '💬', label: 'Total', value: d.kpis.total.value, delta: d.kpis.total.delta, deltaInvert: false },
+                  { icon: '🍖', label: 'Reservas', value: d.kpis.reservas.value, delta: d.kpis.reservas?.delta, deltaInvert: false },
+                  { icon: '🔁', label: 'Retorn.', value: d.kpis.retornantes?.value || '0', delta: d.kpis.retornantes?.delta, deltaInvert: false },
+                  { icon: '📊', label: 'Taxa', value: d.kpis.taxaRetorno?.value || '0%', delta: d.kpis.taxaRetorno?.delta, deltaInvert: false },
+                  { icon: '🤖', label: 'Helena', value: String(d.clientesUnicos || 0) },
+                  { icon: '🎂', label: 'Niver', value: d.kpis.aniversarios?.value || '0' },
+                  { icon: '🕐', label: 'Fora H.', value: d.kpis.fora.value, delta: d.kpis.fora?.delta, deltaInvert: true },
+                  { icon: '📅', label: 'Progr.', value: d.kpis.programacao?.value || '0' },
+                ].map((k, i) => (
+                  <div key={i} className="kpi-strip__item">
+                    <span className="kpi-strip__icon">{k.icon}</span>
+                    <span className="kpi-strip__val">{loading ? '—' : k.value}</span>
+                    {k.delta != null && k.delta !== 0 && (
+                      <span className={`kdelta ${(k.deltaInvert ? k.delta < 0 : k.delta > 0) ? 'kdelta--good' : 'kdelta--bad'}`}>
+                        {k.delta > 0 ? '▲+' : '▼'}{k.delta}%
+                      </span>
+                    )}
+                  </div>
+                ))}
+              </div>
+            ) : (
+            <>
             {/* KPIs prioritários — Aguardando + Concluído */}
             <div className="g11 kpi-priority" style={{ marginTop: 8 }}>
               <KPICard icon="🔔" label="Aguardando Atendente" loading={loading}
@@ -403,55 +428,43 @@ export default function App() {
                 ak={tab + 'r'} delta={d.kpis.reservas?.delta} deltaInvert={false}
                 onOpenModal={() => openModal('reservas')}
               />
-              <KPICard icon="⭐" label="Satisfação" loading={loading}
-                value={d.kpis.satisfacao?.value || '—'} sub={d.kpis.satisfacao?.sub || '—'}
-                ak={tab + 's'} delta={d.kpis.satisfacao?.delta} deltaInvert={false}
-                onOpenModal={() => openModal('feedback')}
+              <KPICard icon="🔁" label="Retornantes" sm loading={loading}
+                value={d.kpis.retornantes?.value || '0'} sub={d.kpis.retornantes?.sub || '—'}
+                ak={tab + 'ret'} delta={d.kpis.retornantes?.delta} deltaInvert={false}
+                onOpenModal={() => openModal('fidelizacao')}
               />
-              <KPICard icon="🕐" label="Fora do Horário" sm loading={loading}
-                value={d.kpis.fora.value} sub={d.kpis.fora.sub}
-                ak={tab + 'f'} delta={d.kpis.fora?.delta} deltaInvert={true}
-                onOpenModal={() => openModal('fora')}
+              <KPICard icon="📊" label="Taxa Retorno" sm loading={loading}
+                value={d.kpis.taxaRetorno?.value || '0%'} sub={d.kpis.taxaRetorno?.sub || '—'}
+                ak={tab + 'tr'} delta={d.kpis.taxaRetorno?.delta} deltaInvert={false}
+                onOpenModal={() => openModal('fidelizacao')}
               />
             </div>
 
             {/* KPIs — linha 2 */}
             <div className="g4">
-              <KPICard icon="🤖" label="Atendidos Helena" sm loading={loading}
-                value={d.kpis.clientesHelena?.value || '0'} sub={d.kpis.clientesHelena?.sub || '—'}
-                ak={tab + 'ch'} delta={d.kpis.clientesHelena?.delta} deltaInvert={false}
-                onOpenModal={() => openModal('total')}
-              />
-              <KPICard icon="👤" label="Clientes Únicos" loading={loading}
+              <KPICard icon="🤖" label="Atendimentos Helena" loading={loading}
                 value={String(d.clientesUnicos || 0)} sub={d.kpis.total.sub}
                 ak={tab + 'u'} delta={d.kpis.clientes?.delta} deltaInvert={d.kpis.clientes?.deltaInvert ?? false}
                 onOpenModal={() => openModal('clientes')}
-              />
-              <KPICard icon="📅" label="Programação" sm loading={loading}
-                value={d.kpis.programacao?.value || '0'} sub={d.kpis.programacao?.sub || '—'}
-                ak={tab + 'pg'} delta={d.kpis.programacao?.delta} deltaInvert={d.kpis.programacao?.deltaInvert ?? false}
-                onOpenModal={() => openModal('programacao')}
               />
               <KPICard icon="🎂" label="Aniversários" sm loading={loading}
                 value={d.kpis.aniversarios?.value || '0'} sub={d.kpis.aniversarios?.sub || '—'}
                 ak={tab + 'a'} delta={d.kpis.aniversarios?.delta} deltaInvert={d.kpis.aniversarios?.deltaInvert ?? false}
                 onOpenModal={() => openModal('aniversarios')}
               />
-            </div>
-
-            {/* KPIs — linha 3 */}
-            <div className="g11">
-              <KPICard icon="⚠️" label="Reclamações" sm loading={loading}
-                value={d.kpis.reclamacoes?.value || '0'} sub={d.kpis.reclamacoes?.sub || '—'}
-                ak={tab + 'rc'} delta={d.kpis.reclamacoes?.delta} deltaInvert={d.kpis.reclamacoes?.deltaInvert ?? true}
-                onOpenModal={() => openModal('reclamacoes')}
+              <KPICard icon="🕐" label="Fora do Horário" sm loading={loading}
+                value={d.kpis.fora.value} sub={d.kpis.fora.sub}
+                ak={tab + 'f'} delta={d.kpis.fora?.delta} deltaInvert={true}
+                onOpenModal={() => openModal('fora')}
               />
-              <div className="card" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '12px 20px' }}>
-                <div style={{ fontFamily: "'Playfair Display',serif", fontWeight: 900, fontSize: 22, letterSpacing: '0.1em', color: '#E85D04', textTransform: 'uppercase', textShadow: '0 0 18px rgba(232,93,4,0.5), 0 0 40px rgba(232,160,32,0.3)' }}>
-                  Churrasco & Cia
-                </div>
-              </div>
+              <KPICard icon="📅" label="Programação" sm loading={loading}
+                value={d.kpis.programacao?.value || '0'} sub={d.kpis.programacao?.sub || '—'}
+                ak={tab + 'pg'} delta={d.kpis.programacao?.delta} deltaInvert={d.kpis.programacao?.deltaInvert ?? false}
+                onOpenModal={() => openModal('programacao')}
+              />
             </div>
+            </>
+            )}
 
             {/* Grid único: Reservas + Detail + Donut + Turno */}
             <div className="dashboard-hoje-grid" ref={el => {
@@ -475,7 +488,7 @@ export default function App() {
               </div>
               <div className="dh-donut">
                 <CardDonut data={d.donut} ak={tab} loading={loading}
-                  filterType={null} setFilterType={() => {}} />
+                  filterType={filterType} setFilterType={(tipo) => dispatch(setFilterType(tipo))} />
               </div>
               <div className="dh-turno">
                 <TurnoAtual />
@@ -526,13 +539,14 @@ export default function App() {
             {kpiCollapsed ? (
               <div className="kpi-strip">
                 {[
-                  { icon: '🚨', label: 'Aguard.', value: kpis.aguardando?.value || '0', delta: kpis.aguardando?.delta, deltaInvert: true },
+                  { icon: '🔔', label: 'Aguard.', value: kpis.aguardando?.value || '0', delta: kpis.aguardando?.delta, deltaInvert: true },
+                  { icon: '✅', label: 'Concl.', value: kpis.concluido?.value || '0', delta: kpis.concluido?.delta, deltaInvert: false },
                   { icon: '💬', label: 'Total', value: kpis.total.value, delta: kpis.total.delta, deltaInvert: false },
-                  { icon: '👤', label: 'Únicos', value: String(clientesUnicos || 0) },
                   { icon: '🍖', label: 'Reservas', value: kpis.reservas.value, delta: kpis.reservas.delta, deltaInvert: false },
+                  { icon: '🔁', label: 'Retorn.', value: kpis.retornantes?.value || '0', delta: kpis.retornantes?.delta, deltaInvert: false },
+                  { icon: '📊', label: 'Taxa', value: kpis.taxaRetorno?.value || '0%', delta: kpis.taxaRetorno?.delta, deltaInvert: false },
+                  { icon: '🤖', label: 'Helena', value: String(clientesUnicos || 0) },
                   { icon: '🎂', label: 'Niver', value: kpis.aniversarios?.value || '0' },
-                  { icon: '⭐', label: 'Satisf.', value: kpis.satisfacao?.value || '—', delta: kpis.satisfacao?.delta, deltaInvert: false },
-                  { icon: '⚠️', label: 'Reclam.', value: kpis.reclamacoes?.value || '0', delta: kpis.reclamacoes?.delta, deltaInvert: true },
                   { icon: '🕐', label: 'Fora H.', value: kpis.fora.value, delta: kpis.fora.delta, deltaInvert: true },
                   { icon: '📅', label: 'Progr.', value: kpis.programacao?.value || '0' },
                 ].map((k, i) => (
@@ -578,38 +592,27 @@ export default function App() {
                     onOpenModal={() => openModal('reservas')}
                     delta={kpis.reservas.delta} deltaInvert={kpis.reservas.deltaInvert}
                   />
-                  <KPICard icon="⭐" label="Satisfação" loading={loading}
-                    value={kpis.satisfacao?.value || '—'} sub={kpis.satisfacao?.sub || '—'}
-                    ak={tab + 's'}
-                    onOpenModal={() => openModal('feedback')}
-                    delta={kpis.satisfacao?.delta} deltaInvert={kpis.satisfacao?.deltaInvert ?? false}
+                  <KPICard icon="🔁" label="Retornantes" sm loading={loading}
+                    value={kpis.retornantes?.value || '0'} sub={kpis.retornantes?.sub || '—'}
+                    ak={tab + 'ret'}
+                    onOpenModal={() => openModal('fidelizacao')}
+                    delta={kpis.retornantes?.delta} deltaInvert={false}
                   />
-                  <KPICard icon="🕐" label="Fora do Horário" sm loading={loading}
-                    value={kpis.fora.value} sub={kpis.fora.sub}
-                    ak={tab + 'f'}
-                    onOpenModal={() => openModal('fora')}
-                    delta={kpis.fora.delta} deltaInvert={kpis.fora.deltaInvert}
+                  <KPICard icon="📊" label="Taxa Retorno" sm loading={loading}
+                    value={kpis.taxaRetorno?.value || '0%'} sub={kpis.taxaRetorno?.sub || '—'}
+                    ak={tab + 'tr'}
+                    onOpenModal={() => openModal('fidelizacao')}
+                    delta={kpis.taxaRetorno?.delta} deltaInvert={false}
                   />
                 </div>
 
                 {/* KPIs — linha 2 */}
                 <div className="g4">
-                  <KPICard icon="🤖" label="Atendidos Helena" sm loading={loading}
-                    value={kpis.clientesHelena?.value || '0'} sub={kpis.clientesHelena?.sub || '—'}
-                    ak={tab + 'ch'} delta={kpis.clientesHelena?.delta} deltaInvert={false}
-                    onOpenModal={() => openModal('total')}
-                  />
-                  <KPICard icon="👤" label="Clientes Únicos" loading={loading}
+                  <KPICard icon="🤖" label="Atendimentos Helena" loading={loading}
                     value={String(clientesUnicos || 0)} sub={kpis.total.sub}
                     ak={tab + 'u'}
                     onOpenModal={() => openModal('clientes')}
                     delta={kpis.clientes?.delta} deltaInvert={kpis.clientes?.deltaInvert ?? false}
-                  />
-                  <KPICard icon="📅" label="Programação" sm loading={loading}
-                    value={kpis.programacao?.value || '0'} sub={kpis.programacao?.sub || '—'}
-                    ak={tab + 'pg'}
-                    onOpenModal={() => openModal('programacao')}
-                    delta={kpis.programacao?.delta} deltaInvert={kpis.programacao?.deltaInvert ?? false}
                   />
                   <KPICard icon="🎂" label="Aniversários" sm loading={loading}
                     value={kpis.aniversarios?.value || '0'} sub={kpis.aniversarios?.sub || '—'}
@@ -617,26 +620,18 @@ export default function App() {
                     onOpenModal={() => openModal('aniversarios')}
                     delta={kpis.aniversarios?.delta} deltaInvert={kpis.aniversarios?.deltaInvert ?? false}
                   />
-                </div>
-
-                {/* KPIs — linha 3 */}
-                <div className="g11">
-                  <KPICard icon="⚠️" label="Reclamações" sm loading={loading}
-                    value={kpis.reclamacoes?.value || '0'} sub={kpis.reclamacoes?.sub || '—'}
-                    ak={tab + 'rc'}
-                    onOpenModal={() => openModal('reclamacoes')}
-                    delta={kpis.reclamacoes?.delta} deltaInvert={kpis.reclamacoes?.deltaInvert ?? true}
+                  <KPICard icon="🕐" label="Fora do Horário" sm loading={loading}
+                    value={kpis.fora.value} sub={kpis.fora.sub}
+                    ak={tab + 'f'}
+                    onOpenModal={() => openModal('fora')}
+                    delta={kpis.fora.delta} deltaInvert={kpis.fora.deltaInvert}
                   />
-                  <div className="card" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '12px 20px' }}>
-                    <div style={{ textAlign: 'center' }}>
-                      <div style={{ fontFamily: "'Playfair Display',serif", fontWeight: 900, fontSize: 16, letterSpacing: '0.08em', color: 'var(--t1)', textTransform: 'uppercase' }}>
-                        Alto da Hirant
-                      </div>
-                      <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.14em', color: 'var(--t2)', textTransform: 'uppercase', marginTop: 2 }}>
-                        Churrasco & Cia
-                      </div>
-                    </div>
-                  </div>
+                  <KPICard icon="📅" label="Programação" sm loading={loading}
+                    value={kpis.programacao?.value || '0'} sub={kpis.programacao?.sub || '—'}
+                    ak={tab + 'pg'}
+                    onOpenModal={() => openModal('programacao')}
+                    delta={kpis.programacao?.delta} deltaInvert={kpis.programacao?.deltaInvert ?? false}
+                  />
                 </div>
               </>
             )}

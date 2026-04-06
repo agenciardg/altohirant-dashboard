@@ -167,11 +167,17 @@ function TurnoAtualInner() {
 
   return (
     <div className="turno-atual-card" style={{
-      background: 'var(--card)',
+      background: aberto
+        ? 'linear-gradient(135deg, var(--card) 0%, rgba(232,93,4,0.06) 100%)'
+        : 'linear-gradient(135deg, var(--card) 0%, rgba(107,114,128,0.04) 100%)',
       borderRadius: 12,
-      border: '1px solid var(--border)',
-      boxShadow: 'var(--card-glow, none)',
-      transition: 'background 0.35s, border-color 0.35s',
+      border: aberto
+        ? '1px solid rgba(232,93,4,0.3)'
+        : '1px solid rgba(220,38,38,0.25)',
+      boxShadow: aberto
+        ? '0 0 20px rgba(232,93,4,0.08)'
+        : '0 0 20px rgba(220,38,38,0.06)',
+      transition: 'background 0.35s, border-color 0.35s, box-shadow 0.35s',
       padding: '14px 16px',
       display: 'flex',
       flexDirection: 'column',
@@ -181,10 +187,10 @@ function TurnoAtualInner() {
     }}>
       {/* Top gradient bar */}
       <div style={{
-        position: 'absolute', top: 0, left: 0, right: 0, height: 3,
+        position: 'absolute', top: 0, left: 0, right: 0, height: 4,
         background: aberto
-          ? `linear-gradient(90deg, ${cor}, #e8a020, ${cor})`
-          : 'linear-gradient(90deg, #4B5563, #6B7280, #4B5563)',
+          ? `linear-gradient(90deg, #E85D04, #e8a020, #F97316)`
+          : 'linear-gradient(90deg, #DC2626, #EF4444, #DC2626)',
       }} />
 
       {/* Header */}
@@ -195,14 +201,16 @@ function TurnoAtualInner() {
         }}>
           Turno Atual
         </div>
-        <div style={{
-          fontSize: 9, fontWeight: 700, letterSpacing: '0.06em',
-          padding: '2px 8px', borderRadius: 20,
-          background: aberto ? 'rgba(34,197,94,0.13)' : 'rgba(107,114,128,0.14)',
-          color: aberto ? '#22C55E' : '#6B7280',
+        {aberto && <div style={{
+          fontSize: 10, fontWeight: 700, letterSpacing: '0.08em',
+          padding: '3px 12px', borderRadius: 20,
+          background: 'rgba(34,197,94,0.15)',
+          color: '#22C55E',
+          border: '1px solid rgba(34,197,94,0.3)',
+          textShadow: '0 0 8px rgba(34,197,94,0.3)',
         }}>
-          {aberto ? 'ABERTO' : 'FECHADO'}
-        </div>
+          ABERTO
+        </div>}
       </div>
 
       {/* Main content */}
@@ -229,9 +237,10 @@ function TurnoAtualInner() {
           ) : (
             <div style={{
               width: 80, height: 80, borderRadius: '50%',
-              border: '2px solid var(--border)',
+              border: '2px solid rgba(220,38,38,0.3)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              opacity: 0.6,
+              opacity: 0.8,
+              boxShadow: '0 0 16px rgba(220,38,38,0.15)',
             }}>
               <span style={{ fontSize: 28 }}>🔒</span>
             </div>
@@ -243,7 +252,8 @@ function TurnoAtualInner() {
           <div style={{
             fontFamily: "'Playfair Display', serif",
             fontSize: 22, fontWeight: 900, lineHeight: 1.1,
-            color: aberto ? cor : 'var(--t2)',
+            color: aberto ? cor : '#DC2626',
+            textShadow: aberto ? `0 0 12px ${cor}40` : '0 0 12px rgba(220,38,38,0.25)',
             letterSpacing: '-0.02em',
           }}>
             {turno.nome}
